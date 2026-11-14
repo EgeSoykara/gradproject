@@ -91,6 +91,9 @@ class Note(models.Model):
     portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE)
     title = models.CharField(max_length=120)
     body = models.TextField(max_length=10000)
+    fund = models.ForeignKey(
+        Asset, on_delete=models.SET_NULL, null=True, blank=True, limit_choices_to={'kind': 'fund'}
+    )
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:

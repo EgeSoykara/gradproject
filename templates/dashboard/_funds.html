@@ -1,0 +1,30 @@
+<section class="panel bridge-card">
+  <h2>{{ t.funds }}</h2>
+  <div class="bridge-funds">
+  {% for fund in funds %}
+    <article class="bridge-fund {% if fund.ineligible %}ineligible{% endif %}">
+      <h3><span class="fund-symbol">{{ fund.symbol }}</span> {{ fund.title }}</h3>
+      <p class="bridge-muted">{{ fund.subcategory }}</p>
+      {% include 'dashboard/_copy.html' with block=fund %}
+      {% if fund.ineligible %}
+        <p class="source-copy">{{ fund.ineligibility_reason }}</p>
+      {% else %}
+        <div class="bridge-inline">{% for chip in fund.chips %}
+          <span class="horizon-chip {{ chip.color }}"><span>{{ chip.label }}</span><strong>{{ chip.status }}</strong></span>
+        {% endfor %}</div>
+        {% if fund.agreement %}<p class="source-copy">{{ fund.agreement }}</p>{% endif %}
+        {% for chip in fund.chips %}
+          {% if chip.agreement or level == 'expert' and chip.rank is not None %}
+            <p class="bridge-muted">{{ chip.label }}{% if level == 'expert' and chip.rank is not None %} · {{ t.percentile }} {% include 'dashboard/_pct.html' with value=chip.rank %}{% endif %}{% if chip.agreement %} · <span class="source-copy">{{ chip.agreement }}</span>{% endif %}</p>
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+      <dl class="bridge-facts">
+        {% if fund.calculated_risk_level %}<dt>{{ t.risk }}</dt><dd>{{ fund.calculated_risk_level }}/7</dd>{% endif %}
+        {% if fund.news_status %}<dt>{{ t.fund_news }}</dt><dd>{{ fund.news_status }}</dd>{% endif %}
+      </dl>
+      {% include 'dashboard/_disclaimer.html' with text=fund.disclaimer %}
+    </article>
+  {% empty %}<p class="bridge-muted">{{ t.missing }}</p>{% endfor %}
+  </div>
+</section>

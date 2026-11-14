@@ -1,0 +1,28 @@
+<section class="panel bridge-card">
+  <h2>{{ t.rebalance }}</h2>
+  {% include 'dashboard/_copy.html' with block=r %}
+  {% if r.description %}<p class="source-copy">{{ r.description }}</p>{% endif %}
+  {% for name, entries in r.tables %}
+    <div class="bridge-section">
+      <h3>{{ name }}</h3>
+      {% if entries %}
+        <div class="table-wrap"><table class="bridge-table">
+          <thead><tr><th scope="col">{{ name }}</th><th scope="col">{{ t.current }}</th><th scope="col">{{ t.target }}</th><th scope="col">{{ t.gap }}</th></tr></thead>
+          <tbody>{% for name, actual, target, diff in entries %}
+            <tr><th scope="row">{{ name }}</th><td>{% include 'dashboard/_pct.html' with value=actual %}</td><td>{% include 'dashboard/_pct.html' with value=target %}</td><td>{% include 'dashboard/_pct.html' with value=diff %}</td></tr>
+          {% endfor %}</tbody>
+        </table></div>
+      {% else %}<p class="bridge-muted">{{ t.missing }}</p>{% endif %}
+    </div>
+  {% endfor %}
+  {% include 'dashboard/_chart.html' with figure=r.grouped chart_id='bridge-rebalance' label=t.rebalance %}
+  <div class="bridge-split bridge-section">
+    <div>
+      <h3>{{ t.contribution }}</h3>
+      {% if r.contribution_description %}<p class="source-copy">{{ r.contribution_description }}</p>{% endif %}
+      {% include 'dashboard/_amounts.html' with rows=r.contribution %}
+    </div>
+    <div><h3>{{ t.cash_example }}</h3>{% include 'dashboard/_amounts.html' with rows=r.cash %}</div>
+  </div>
+  {% include 'dashboard/_disclaimer.html' with text=r.disclaimer %}
+</section>

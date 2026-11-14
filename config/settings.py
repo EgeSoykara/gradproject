@@ -22,6 +22,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'portfolio',
+    'dashboard',
 ]
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -65,10 +66,11 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_URL = 'login'
-LOGIN_REDIRECT_URL = 'dashboard'
+LOGIN_REDIRECT_URL = 'ai_dashboard'
 LOGOUT_REDIRECT_URL = 'login'
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = 'Lax'
 X_FRAME_OPTIONS = 'DENY'
 DATA_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
 ML_MODEL_CLASS = os.getenv('ML_MODEL_CLASS', 'sklearn.ensemble.RandomForestRegressor')
+USE_MOCK_DASHBOARD = os.getenv('USE_MOCK_DASHBOARD', 'true').lower() == 'true'

@@ -35,7 +35,7 @@ def register(request):
         user = form.save()
         Portfolio.objects.create(user=user, name='My portfolio')
         login(request, user)
-        return redirect('dashboard')
+        return redirect('ai_dashboard')
     return render(request, 'registration/register.html', {'form': form})
 
 
@@ -156,9 +156,13 @@ def transaction_edit(request, pk=None):
         {
             'form': form,
             'title': 'Edit transaction' if pk else 'Record a transaction',
-            'subtitle': 'Your ledger is the source of truth. Start with a deposit before buying assets.',
+            'subtitle': 'Record cash deposits before entering fund or metal transactions.',
             'page': 'transactions',
             'cancel_url': 'transactions',
+            'asset_options': [
+                {'id': asset.pk, 'kind': asset.kind}
+                for asset in form.fields['asset'].queryset
+            ],
         },
     )
 
@@ -332,7 +336,7 @@ def notes(request):
     return render(
         request,
         'portfolio/notes.html',
-        {'page': 'notes', 'notes': Note.objects.filter(portfolio=active(request))},
+        {'page': 'notes', 'notes': Note.objects.filter(portfolio=active(request)).select_related('fund')},
     )
 
 

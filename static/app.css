@@ -7,3 +7,6 @@
 @media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
 
 .hero-metric>div{position:relative;z-index:1}.hero-metric:after{z-index:0}
+.legal-footer { color: #53655d; line-height: 1.5; font-size: 11px; justify-content: flex-start; }
+body > .legal-footer { padding: 18px max(16px, 4vw); margin: 0; }
+@media (max-width: 620px) { .legal-footer [aria-hidden] { display: none; } }

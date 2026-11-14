@@ -24,11 +24,11 @@ class TransactionForm(forms.ModelForm):
         labels = {
             'price': 'Unit price / cash amount',
             'quantity': 'Units / grams',
+            'kind': 'Alış / Satış',
             'fee': 'Fee (transaction currency)',
         }
         help_texts = {
             'price': 'For deposits and withdrawals, enter the full cash amount.',
-            'quantity': 'Cash movements use 1. Metals use grams.',
             'currency': 'Cash is held in TRY; other currencies convert at the recorded historical rate.',
         }
 
@@ -57,7 +57,8 @@ class TransactionForm(forms.ModelForm):
 class NoteForm(forms.ModelForm):
     class Meta:
         model = Note
-        fields = ['title', 'body']
+        fields = ['title', 'body', 'fund']
+        help_texts = {'fund': 'Leave blank to link this note to the whole portfolio.'}
         widgets = {
             'body': forms.Textarea(
                 attrs={

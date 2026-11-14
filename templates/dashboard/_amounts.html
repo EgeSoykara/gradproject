@@ -1,0 +1,5 @@
+{% if rows %}
+<ul class="bridge-amounts">
+  {% for row in rows %}<li><strong>{{ row.symbol }}</strong><span>{{ row.allocated_amount_tl|floatformat:'2g'|default:'—' }} TRY</span></li>{% endfor %}
+</ul>
+{% else %}<p class="bridge-muted">{{ t.missing }}</p>{% endif %}

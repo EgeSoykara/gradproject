@@ -1,0 +1,42 @@
+<section class="panel bridge-card portfolio-summary">
+  <h2>{{ t.portfolio }}</h2>
+  {% include 'dashboard/_copy.html' with block=p %}
+  <div class="bridge-split">
+    <div class="bridge-valuation">
+      <p class="bridge-kpi-label">{{ t.total }}</p>
+      <p class="bridge-total">{% if p.total is not None %}{{ p.total|floatformat:'2g' }} <span>{{ currency }}</span>{% else %}—{% endif %}</p>
+      <ul class="currency-list">
+        {% for code, value in p.others %}{% if value is not None %}<li><span>{{ code }}</span>{{ value|floatformat:'2g' }}</li>{% endif %}{% endfor %}
+      </ul>
+      <dl class="bridge-facts"><dt>{{ t.cash }}</dt><dd>{% if p.cash is not None %}{{ p.cash|floatformat:'2g' }} {{ p.cash_currency }}{% else %}—{% endif %}</dd></dl>
+      {% if p.protected is not None %}
+        <div class="protection-value"><span>{{ t.protected }}</span><strong>{% include 'dashboard/_pct.html' with value=p.protected %}</strong></div>
+        <progress value="{{ p.protected|stringformat:'s' }}" max="100" aria-label="{{ t.protected }}"></progress>
+      {% endif %}
+      {% if p.protected_text %}<p class="source-copy">{{ p.protected_text }}</p>{% endif %}
+    </div>
+    <div>
+      <h3>{{ t.allocation }}</h3>
+      {% if p.pie %}
+        {% include 'dashboard/_chart.html' with figure=p.pie chart_id='bridge-allocation' label=t.allocation %}
+        <ul class="allocation-key">
+          {% for name, value, color in p.allocations %}<li><span class="allocation-swatch" style="background:{{ color }}"></span><span>{{ name }}</span><strong>{% include 'dashboard/_pct.html' %}</strong></li>{% endfor %}
+        </ul>
+        {% if p.pie_note %}<p class="bridge-muted">{{ t.pie_note }}</p>{% endif %}
+      {% else %}<p class="bridge-muted">{{ t.missing }}</p>{% endif %}
+    </div>
+  </div>
+  {% if p.tracker_rows %}
+    <div class="bridge-section">
+      <h3>{{ t.tracker }}</h3>
+      {% if p.months is not None %}<p class="bridge-muted">{{ t.months }} · {{ p.months }}</p>{% endif %}
+      <div class="table-wrap"><table class="bridge-table">
+        <thead><tr><th scope="col">{{ t.currency }}</th><th scope="col">{{ t.invested }}</th><th scope="col">{{ t.value }}</th><th scope="col">{{ t.gap }}</th></tr></thead>
+        <tbody>{% for name, invested, current, gap, gap_pct in p.tracker_rows %}
+          <tr><th scope="row">{{ name }}</th><td>{{ invested|floatformat:'2g'|default:'—' }}</td><td>{{ current|floatformat:'2g'|default:'—' }}</td><td>{{ gap|floatformat:'2g'|default:'—' }}{% if gap_pct is not None %} ({% include 'dashboard/_pct.html' with value=gap_pct %}){% endif %}</td></tr>
+        {% endfor %}</tbody>
+      </table></div>
+    </div>
+  {% endif %}
+  {% include 'dashboard/_disclaimer.html' with text=p.disclaimer %}
+</section>
