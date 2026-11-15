@@ -33,19 +33,17 @@ The transaction form searches the assets already stored in SQLite. When the full
 
 ## Bridge integration
 
-Unpack `EgeSpecial.zip` and place `PortfolioAI_Ege` next to this project. Keep the supplied key file as `.env` inside `PortfolioAI_Ege`. From the Django folder, run:
+Download `EgeSpecial.zip` from the person who shared the analysis package. With Git and Python 3.13 installed, run these commands in the Django folder:
 
 ```powershell
-$enginePatch = (Resolve-Path -LiteralPath 'integrations/ai-engine.patch').Path
-git -C ../PortfolioAI_Ege apply $enginePatch
-.\.venv\Scripts\python.exe -m pip install -e ../PortfolioAI_Ege 'statsmodels==0.15.0' 'tefas-crawler==0.6.0' 'transformers==5.18.0'
-Copy-Item ../PortfolioAI_Ege/results/dashboard_examples/persona_*.json dashboard/mock/
-.\.venv\Scripts\python.exe manage.py import_fund_catalog ../PortfolioAI_Ege/data/universe_scores.json
+.\setup.ps1 -EngineZip "C:\path\to\EgeSpecial.zip"
 .\start.ps1 -Engine
 ```
 
-Run the patch once on a fresh extraction. It adapts the bridge's savings tracker to use the Django ledger's external cash flows and exposes the sentiment breakdown for each theme. The bridge keeps its original cash-flow behavior for callers using its original signature.
+The installer extracts `PortfolioAI_Ege` beside the Django folder, applies the compatibility patch, installs dependencies, copies the persona files and prepares an archive example. Sign in as `demo` and select **Arşiv veri örneği** in the portfolio menu.
+
+The compatibility patch adapts the savings tracker to use the Django ledger's external cash flows and exposes the sentiment breakdown for each theme. The bridge keeps its original cash-flow behavior for callers using its original signature.
 
 `dashboard/services.py` sends the active portfolio's positions and complete history to a separate local process running `dashboard/bridge_worker.py`. Positions use prices from the supplied archives and metal symbols are translated to the engine's codes. A portfolio needs at least one open position with a matching archive entry. Currency quotes and the benchmark use their respective sources. Dashboard requests use the cached news data and run without access to the delivered API keys. The daily refresh pipeline remains a separate manual operation.
 
-On Ege's machine, the two running previews are on port 8016 (personas) and 8017 (engine). For the engine preview, sign in as the existing `demo` user and select **Arşiv veri örneği** via the portfolio switch. The integration was run with Python 3.13 and the locally installed CPU build of PyTorch.
+The archive demo uses the supplied data and model weights. API keys in a separate engine `.env` file are only needed for data refresh features that authenticate to external providers.

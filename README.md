@@ -15,6 +15,8 @@ cd gradproject
 
 Requires Python 3.13 for the tested configuration. On later runs, use only `.\start.ps1`. Generated local data and model files are not included in the repository.
 
+If you have the `EgeSpecial.zip` analysis package, install the full dashboard with `.\setup.ps1 -EngineZip "C:\path\to\EgeSpecial.zip"` and start it with `.\start.ps1 -Engine`. [Engine setup and example portfolio](UI_README.md#bridge-integration).
+
 Open **http://127.0.0.1:8000**. Sample account:
 
 - Username: `demo`

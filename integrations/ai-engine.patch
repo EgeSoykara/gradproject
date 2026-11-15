@@ -8,7 +8,7 @@
 +    ledger_cash_flows: bool = False,
  ) -> dict[str, Any]:
      """Return unified one-screen dashboard data payload for web and mobile interfaces.
-
+ 
 @@ -1018,7 +1020,7 @@
                  elif h.get("fund_val") is not None:
                      entered_fund_val += float(h.get("fund_val", 0.0))
@@ -21,7 +21,7 @@
 @@ -1151,7 +1153,10 @@
          cash_flows_usd: list[tuple[pd.Timestamp, float]] = []
          cash_flows_real_tl: list[tuple[pd.Timestamp, float]] = []
-
+ 
 -        for c in sorted_contribs:
 +        cash_flow_rows = [
 +            c for c in sorted_contribs if str(c.get("symbol", "")).strip().upper() == "CASH"
@@ -33,7 +33,7 @@
 @@ -1219,7 +1224,11 @@
          net_inv_usd = total_buys_usd - total_sells_usd
          net_inv_real_tl = total_buys_real_tl - total_sells_real_tl
-
+ 
 -        cur_tl = total_implied_wealth if (transaction_records_mismatch or not has_holdings_input) else total_port_val_try
 +        cur_tl = (
 +            total_port_val_try if ledger_cash_flows
@@ -42,11 +42,11 @@
 +        )
          cur_usd = round(cur_tl / latest_snapshot_usd_rate, 2)
          cur_real_tl = cur_tl
-
+ 
 @@ -1241,7 +1250,7 @@
          xirr_real_tl = compute_xirr(xirr_cf_real_tl)
          xirr_real_tl = max(-1.0, float(xirr_real_tl))
-
+ 
 -        distinct_months = len(set(str(c.get("date", ""))[:7] for c in sorted_contribs if c.get("date")))
 +        distinct_months = len(set(str(c.get("date", ""))[:7] for c in cash_flow_rows if c.get("date")))
          savings_tracker = {
@@ -73,7 +73,7 @@
 @@ -461,8 +461,26 @@
          f"over the last 7 days. Overall portfolio sentiment: {agg_current['label_en']} ({trend_en})."
      )
-
+ 
 +    theme_breakdown = []
 +    for theme in portfolio_themes:
 +        theme_items = [item for item in current_scored if theme in item["matched_themes"]]
