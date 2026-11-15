@@ -9,6 +9,7 @@ TEXT = {
     'portfolio': ('Portföy', 'Portfolio'),
     'sample': ('Örnek veri', 'Example data'),
     'connected': ('Portföy verisi', 'Portfolio data'),
+    'snapshot_date': ('USD kuru tarihi', 'USD rate date'),
     'language': ('Dil', 'Language'),
     'currency': ('Para birimi', 'Currency'),
     'profile': ('Profil', 'Profile'),
@@ -97,7 +98,8 @@ def localized(value, lang):
 
 
 def copy_blocks(section, lang):
-    version = section.get(lang) or section.get('tr') or section.get('en') or {}
+    texts = section.get('texts') or section
+    version = texts.get(lang) or texts.get('tr') or texts.get('en') or {}
     return {
         'summary': (
             version.get('summary') or section.get(f'summary_{lang}')
@@ -107,14 +109,16 @@ def copy_blocks(section, lang):
             version.get('details') or section.get(f'details_{lang}')
             or localized(section.get('details'), lang)
         ),
-        'disclaimer': localized(section.get('disclaimer'), lang),
+        'disclaimer': localized(texts.get('disclaimer') or section.get('disclaimer'), lang),
     }
 
 
 def portfolio_context(section, currency, labels):
     selected = section.get(f'total_value_{currency.lower()}')
     cash = section.get('cash_balance')
-    cash_currency = section.get('base_currency') or 'TRY'
+    cash_currency = section.get('cash_currency') or (
+        'TRY' if section.get('usd_rate_date') else section.get('base_currency', 'TRY')
+    )
     source_total = section.get(f'total_value_{cash_currency.lower()}')
     if currency != cash_currency and isinstance(cash, Real) and selected is not None and source_total:
         cash, cash_currency = cash * selected / source_total, currency
@@ -144,6 +148,7 @@ def portfolio_context(section, currency, labels):
         'pie': pie,
         'protected': section.get('usd_protective_share_pct'),
         'protected_text': section.get('usd_protective_share_text'),
+        'as_of': section.get('usd_rate_date'),
         'months': tracker.get('months_count'),
         'tracker_rows': tracker_rows,
     }
@@ -194,7 +199,10 @@ def robustness_context(section, lang, labels):
 def rebalance_context(section, lang, labels):
     target = section.get('target_comparison') or {}
     contribution = section.get('contribution_only') or {}
-    categories = target.get('subcategory_comparison') or section.get('subcategory_comparison') or []
+    categories = (
+        target.get('by_subcategory') or target.get('subcategory_comparison')
+        or section.get('subcategory_comparison') or []
+    )
     funds = target.get('comparison') or target.get('fund_comparison') or []
     tables = [
         [(entry.get(field), entry.get('current_weight_pct'), entry.get('target_weight_pct'),
@@ -216,7 +224,10 @@ def rebalance_context(section, lang, labels):
         'tables': [(labels['subcategory'], tables[0]), (labels['fund'], tables[1])],
         'grouped': grouped,
         'contribution': contribution.get('allocations') or [],
-        'cash': cash,
+        'cash': [
+            {**entry, 'allocated_amount_tl': entry.get('allocated_amount_tl', entry.get('suggested_amount'))}
+            for entry in cash
+        ],
         'description': target.get(f'description_{lang}'),
         'contribution_description': contribution.get(f'description_{lang}'),
     }
@@ -226,8 +237,9 @@ def fund_context(fund, lang, labels):
     context = {**fund, **copy_blocks(fund, lang), 'chips': []}
     if fund.get('is_eligible') is False or fund.get('is_suspended'):
         context['ineligible'] = True
+        context['ineligibility_reason'] = fund.get(f'ineligibility_reason_{lang}') or fund.get('ineligibility_reason')
         return context
-    view = fund.get('gru_view') or {}
+    view = fund.get('horizons') or fund.get('gru_view') or {}
     context['agreement'] = localized(fund.get('seed_agreement_text') or view.get('seed_agreement_text'), lang)
     for horizon, modern, legacy in [
         ('short', 'short_5d', 'horizon_5d'),
@@ -236,7 +248,7 @@ def fund_context(fund, lang, labels):
     ]:
         data = view.get(modern) or view.get(legacy) or {}
         rank = data.get('percentile', data.get('subcategory_percentile'))
-        status = localized(data.get('status') or data.get('label'), lang)
+        status = data.get(f'outlook_{lang}') or localized(data.get('status') or data.get('label'), lang)
         color = {'güçlü': 'strong', 'strong': 'strong', 'zayıf': 'weak', 'weak': 'weak'}.get(
             (status or '').lower(), 'neutral'
         )
@@ -245,25 +257,34 @@ def fund_context(fund, lang, labels):
             status = labels[color]
         context['chips'].append({
             'label': labels[horizon], 'status': status or '—', 'color': color,
-            'rank': rank, 'agreement': localized(data.get('seed_agreement_text'), lang),
+            'rank': rank, 'agreement': data.get(f'seed_agreement_text_{lang}')
+            or localized(data.get('seed_agreement_text'), lang),
         })
     return context
 
 
 def news_context(section, lang, labels):
     themes = section.get('themes') or section.get('theme_status') or []
+    if not themes:
+        headlines = section.get('top_headlines_per_theme') or {}
+        themes = [
+            {'theme': theme, 'top_headline': headlines.get(theme)}
+            for theme in section.get('portfolio_themes') or []
+        ]
     if isinstance(themes, dict):
         themes = [dict(entry, theme=key) if isinstance(entry, dict) else {'theme': key, 'status': entry}
                   for key, entry in themes.items()]
     for theme in themes:
         status = localized(theme.get('status'), lang)
         insufficient = (status or '').lower().replace('_', ' ') in {'insufficient data', 'yetersiz veri'}
+        insufficient |= status is None and section.get('label') == 'insufficient_data'
         headline = theme.get('top_headline') or next(iter(theme.get('top_headlines') or []), {})
+        counts = theme.get('counts') or {}
         yield {
             'name': localized(theme.get('theme') or theme.get('name'), lang),
-            'status': labels['insufficient'] if insufficient else status,
+            'status': theme.get(f'status_{lang}') or (labels['insufficient'] if insufficient else status),
             'insufficient': insufficient,
-            'counts': [(labels[key], (theme.get('counts') or {}).get(key, theme.get(f'{key}_count')))
+            'counts': [(labels[key], counts.get(key, counts.get(key[:3], theme.get(f'{key}_count'))))
                        for key in ('positive', 'neutral', 'negative')],
             'headline': {'title': headline} if isinstance(headline, str) else headline,
         }
@@ -292,9 +313,16 @@ def dashboard_context(payload, lang, currency):
         'rebalancing_data': {**copy_blocks(sections['rebalancing'], lang),
                             **rebalance_context(sections['rebalancing'], lang, labels)},
         'stay': copy_blocks(sections['stay_the_course'], lang) if sections['stay_the_course'] else None,
-        'news_data': {**copy_blocks(news, lang), 'themes': list(news_context(news, lang, labels))},
+        'news_data': {
+            **copy_blocks(news, lang), 'themes': list(news_context(news, lang, labels)),
+            'status': news.get(f'label_{lang}'),
+            'counts': [(labels[label], (news.get('counts') or {}).get(key))
+                       for label, key in [('positive', 'pos'), ('neutral', 'neu'), ('negative', 'neg')]]
+            if news.get('label') != 'insufficient_data' else [],
+        },
         'comments_data': {**copy_blocks(comment_section, lang), 'items': [
-            {**entry, 'display': entry.get(f'text_{lang}') or entry.get('text_tr') or entry.get('text_en')}
+            {**entry, 'display': entry.get(f'text_{lang}') or entry.get('text_tr') or entry.get('text_en'),
+             'title': entry.get(f'title_{lang}')}
             for entry in (comment_section.get('items', []) if comment_section else comments)
         ]},
         'funds': [fund_context(fund, lang, labels) for fund in payload.get('fund_cards') or []],

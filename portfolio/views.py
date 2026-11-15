@@ -426,7 +426,7 @@ def demo_load(request):
 def portfolio_switch(request):
     p = get_object_or_404(Portfolio, pk=request.POST.get('portfolio_id'), user=request.user)
     request.session['portfolio_id'] = p.id
-    return redirect('dashboard')
+    return redirect('ai_dashboard' if request.POST.get('from_ai_dashboard') == '1' else 'dashboard')
 
 
 @login_required

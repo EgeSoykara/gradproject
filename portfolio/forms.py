@@ -1,4 +1,5 @@
 from datetime import date
+from decimal import ROUND_DOWN, Decimal, InvalidOperation
 
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
@@ -14,9 +15,15 @@ class RegisterForm(UserCreationForm):
 
 
 class TransactionForm(forms.ModelForm):
+    amount_tl = forms.DecimalField(
+        required=False, label='Total amount (TRY)', min_value=Decimal('0.01'),
+        max_digits=18, decimal_places=2,
+        help_text='For a fund, enter either units or a TRY amount. A TRY unit price is required with an amount.',
+    )
+
     class Meta:
         model = Transaction
-        fields = ['kind', 'date', 'asset', 'quantity', 'price', 'currency', 'fee', 'memo']
+        fields = ['kind', 'date', 'asset', 'quantity', 'amount_tl', 'price', 'currency', 'fee', 'memo']
         widgets = {
             'date': forms.DateInput(attrs={'type': 'date'}),
             'memo': forms.TextInput(attrs={'placeholder': 'Optional context for this transaction'}),
@@ -34,6 +41,9 @@ class TransactionForm(forms.ModelForm):
 
     def __init__(self, *args, portfolio=None, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields['quantity'].required = False
+        if not self.instance.pk:
+            self.initial.setdefault('quantity', None)
         self.fields['asset'].queryset = Asset.objects.exclude(kind='benchmark').order_by(
             'kind', 'symbol'
         )
@@ -49,8 +59,28 @@ class TransactionForm(forms.ModelForm):
             self.add_error('date', 'Future transactions are not supported.')
         if data.get('kind') in ('deposit', 'withdraw'):
             data['asset'], data['quantity'], data['fee'] = None, 1, 0
-        elif data.get('kind') in ('buy', 'sell') and not data.get('asset'):
-            self.add_error('asset', 'Select a fund or metal.')
+        elif data.get('kind') in ('buy', 'sell'):
+            asset, quantity, amount = data.get('asset'), data.get('quantity'), data.get('amount_tl')
+            if not asset:
+                self.add_error('asset', 'Select a fund or metal.')
+            elif amount is not None:
+                if asset.kind != 'fund' or data.get('currency') != 'TRY':
+                    self.add_error('amount_tl', 'Enter a TRY amount only for funds priced in TRY.')
+                elif quantity is not None:
+                    self.add_error('amount_tl', 'Enter either units or an amount.')
+                elif data.get('price') and data['price'] > 0:
+                    model_field = self._meta.model._meta.get_field('quantity')
+                    try:
+                        units = (amount / data['price']).quantize(
+                            Decimal('0.00000001'), rounding=ROUND_DOWN
+                        )
+                        data['quantity'] = model_field.clean(units, self.instance)
+                    except InvalidOperation:
+                        self.add_error('amount_tl', 'The resulting number of units is too large.')
+                    except forms.ValidationError as exc:
+                        self.add_error('amount_tl', exc)
+            elif quantity is None and 'quantity' not in self.errors:
+                self.add_error('quantity', 'Enter units, grams or a TRY amount.')
         return data
 
 

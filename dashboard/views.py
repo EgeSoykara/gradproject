@@ -17,7 +17,7 @@ from portfolio.services.valuation import MissingData
 
 from .models import LANGUAGES, LEVELS, PROFILES, DashboardPreferences
 from .presentation import dashboard_context, dashboard_labels
-from .services import DashboardUnavailable, load_dashboard, mock_choices
+from .services import DEFAULT_FIXTURE, DashboardUnavailable, load_dashboard, mock_choices
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +50,7 @@ def read_payload(request, preferences, params):
         currency=params.get('currency') or preferences.currency,
         profile=params.get('profile') or preferences.profile,
         portfolio=workspace(request).get('active_portfolio'),
-        fixture=params.get('fixture') or 'example',
+        fixture=params.get('fixture') or DEFAULT_FIXTURE,
     )
 
 
@@ -72,7 +72,7 @@ def dashboard(request):
         'level': params.get('level') or preferences.level,
         'monthly_contribution': preferences.monthly_contribution,
         'mock': settings.USE_MOCK_DASHBOARD,
-        'fixture': params.get('fixture') or 'example',
+        'fixture': params.get('fixture') or DEFAULT_FIXTURE,
         'fixtures': mock_choices() if settings.USE_MOCK_DASHBOARD else [],
         'query_error': not valid_query or request.GET.get('invalid') == '1',
     }

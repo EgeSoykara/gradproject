@@ -22,14 +22,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const kind = document.querySelector('#id_kind');
   if (kind) {
     const asset = document.querySelector('#id_asset');
-    const quantity = document.querySelector('#id_quantity');
+    const amount = document.querySelector('#id_amount_tl');
     const originalOptions = Array.from(asset.options);
     const options = JSON.parse(document.querySelector('#asset-options').textContent);
     const byId = new Map(options.map(option => [String(option.id), option]));
     const search = document.querySelector('#asset-search');
     const quantityLabel = document.querySelector('label[for="id_quantity"]');
     const updateQuantityLabel = () => {
-      quantityLabel.textContent = byId.get(asset.value)?.kind === 'metal' ? 'Grams:' : 'Units:';
+      const metal = byId.get(asset.value)?.kind === 'metal';
+      const cash = ['deposit', 'withdraw'].includes(kind.value);
+      quantityLabel.textContent = metal ? 'Grams:' : 'Units:';
+      amount.closest('p').hidden = cash || metal;
+      amount.disabled = cash || metal;
     };
     search.hidden = false;
     search.querySelector('input').addEventListener('input', event => {
@@ -53,7 +57,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (cash) input.value = name === 'asset' ? '' : name === 'quantity' ? '1' : '0';
       });
       search.hidden = cash;
-      quantity.required = !cash;
       updateQuantityLabel();
     };
     kind.addEventListener('change', toggle);

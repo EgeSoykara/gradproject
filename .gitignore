@@ -10,3 +10,4 @@ staticfiles/
 .pytest_cache/
 .ruff_cache/
 *.log
+dashboard/mock/persona_*.json

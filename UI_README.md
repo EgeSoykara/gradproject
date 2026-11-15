@@ -27,16 +27,25 @@ The authenticated page and `GET /api/dashboard/?lang=tr&currency=TRY&profile=bal
 | Model basket comparison | `rebalancing.target_comparison`, `contribution_only` and optional `cash_allocation` |
 | Fund cards | `fund_cards`, including `gru_view`, risk, eligibility and news status |
 
-The supplied contract example lives in `dashboard/mock/example.json`. Add actual `persona_1.json` through `persona_4.json` to that directory as they arrive. The panel will list the available files and the same file can be selected with `?fixture=persona_1` on the API. The shipped example has no theme news, crisis table, subcategory model weights, cash allocations, tracker or discipline card. It only includes a 21-day fund horizon. Missing fields are shown as unavailable or omitted where optional. If a horizon has a percentile and no status label, the display uses strong at 67 and above, weak at 33 and below, and neutral otherwise. Confirm these display thresholds with the bridge owner or use the bridge's explicit labels. The supplied allocation weights sum to 113.04%, so the values are shown as supplied alongside a pie of their relative shares.
+The original contract example lives in `dashboard/mock/example.json`. Copy the delivered persona JSON files into `dashboard/mock/`. The panel lists the available personas and the API accepts `?fixture=persona_1`. English uses the supplied English file for Persona 2. The other personas use the localized fields in their original files. Missing fields appear as unavailable or are omitted for optional cards. Persona files stay outside Git.
 
 The transaction form searches the assets already stored in SQLite. When the full fund catalog arrives, import it with `python manage.py import_fund_catalog path/to/universe_scores.json`. Existing asset records are preserved. Notes can link to a fund or the portfolio. The Benchmark page uses ledger-based time-weighted returns with a default start of 100 on the first transaction date. Run `python manage.py refresh_benchmarks` daily to refresh the on-disk SQLite cache from Yahoo Finance. It can run in Windows Task Scheduler, and the page uses the SQLite data on every request. Live portfolio valuation also requires historical prices for the assets held.
 
 ## Bridge integration
 
-Clone or unpack the AI repository next to this project after it is delivered. From this folder, install it in the same environment and restart Django with `USE_MOCK_DASHBOARD=false` in `.env`:
+Unpack `EgeSpecial.zip` and place `PortfolioAI_Ege` next to this project. Keep the supplied key file as `.env` inside `PortfolioAI_Ege`. From the Django folder, run:
 
 ```powershell
-.\.venv\Scripts\python.exe -m pip install -e ../ai-repo
+$enginePatch = (Resolve-Path -LiteralPath 'integrations/ai-engine.patch').Path
+git -C ../PortfolioAI_Ege apply $enginePatch
+.\.venv\Scripts\python.exe -m pip install -e ../PortfolioAI_Ege 'statsmodels==0.15.0' 'tefas-crawler==0.6.0' 'transformers==5.18.0'
+Copy-Item ../PortfolioAI_Ege/results/dashboard_examples/persona_*.json dashboard/mock/
+.\.venv\Scripts\python.exe manage.py import_fund_catalog ../PortfolioAI_Ege/data/universe_scores.json
+.\start.ps1 -Engine
 ```
 
-`dashboard/services.py` is the only module that imports `service_bridge`. It uses the active portfolio and current market prices for positions, translates metal symbols to the bridge names and converts cash to the selected currency. The current published contract only accepts fund purchases and cash deposits in its historical contribution list. For ledgers containing withdrawals, sales or trades in grams, it sends current holdings and balance and leaves the historical contribution list empty until that contract is confirmed. The ledger retains complete records. A live integration check requires the delivered bridge, sample personas and market data.
+Run the patch once on a fresh extraction. It adapts the bridge's savings tracker to use the Django ledger's external cash flows and exposes the sentiment breakdown for each theme. The bridge keeps its original cash-flow behavior for callers using its original signature.
+
+`dashboard/services.py` sends the active portfolio's positions and complete history to a separate local process running `dashboard/bridge_worker.py`. Positions use prices from the supplied archives and metal symbols are translated to the engine's codes. A portfolio needs at least one open position with a matching archive entry. Currency quotes and the benchmark use their respective sources. Dashboard requests use the cached news data and run without access to the delivered API keys. The daily refresh pipeline remains a separate manual operation.
+
+On Ege's machine, the two running previews are on port 8016 (personas) and 8017 (engine). For the engine preview, sign in as the existing `demo` user and select **Arşiv veri örneği** via the portfolio switch. The integration was run with Python 3.13 and the locally installed CPU build of PyTorch.

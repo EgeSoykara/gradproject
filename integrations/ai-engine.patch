@@ -1,0 +1,99 @@
+--- a/service_bridge.py
++++ b/service_bridge.py
+@@ -873,6 +873,8 @@
+     base_currency: str = "TRY",
+     lang: str = "tr",
+     contributions: list[dict[str, Any]] | None = None,
++    *,
++    ledger_cash_flows: bool = False,
+ ) -> dict[str, Any]:
+     """Return unified one-screen dashboard data payload for web and mobile interfaces.
+
+@@ -1018,7 +1020,7 @@
+                 elif h.get("fund_val") is not None:
+                     entered_fund_val += float(h.get("fund_val", 0.0))
+             entered_total = entered_fund_val + max(0.0, float(cash))
+-            if any_symbol_specified and total_implied_wealth > 0 and entered_total > 0:
++            if not ledger_cash_flows and any_symbol_specified and total_implied_wealth > 0 and entered_total > 0:
+                 diff_ratio = abs(entered_total - total_implied_wealth) / total_implied_wealth
+                 if diff_ratio > 0.05:
+                     transaction_records_mismatch = True
+@@ -1151,7 +1153,10 @@
+         cash_flows_usd: list[tuple[pd.Timestamp, float]] = []
+         cash_flows_real_tl: list[tuple[pd.Timestamp, float]] = []
+
+-        for c in sorted_contribs:
++        cash_flow_rows = [
++            c for c in sorted_contribs if str(c.get("symbol", "")).strip().upper() == "CASH"
++        ] if ledger_cash_flows else sorted_contribs
++        for c in cash_flow_rows:
+             c_date_str = str(c.get("date", ""))
+             c_date = pd.to_datetime(c_date_str) if c_date_str else pd.Timestamp.now()
+             c_sym = str(c.get("symbol", "")).strip().upper()
+@@ -1219,7 +1224,11 @@
+         net_inv_usd = total_buys_usd - total_sells_usd
+         net_inv_real_tl = total_buys_real_tl - total_sells_real_tl
+
+-        cur_tl = total_implied_wealth if (transaction_records_mismatch or not has_holdings_input) else total_port_val_try
++        cur_tl = (
++            total_port_val_try if ledger_cash_flows
++            else total_implied_wealth if (transaction_records_mismatch or not has_holdings_input)
++            else total_port_val_try
++        )
+         cur_usd = round(cur_tl / latest_snapshot_usd_rate, 2)
+         cur_real_tl = cur_tl
+
+@@ -1241,7 +1250,7 @@
+         xirr_real_tl = compute_xirr(xirr_cf_real_tl)
+         xirr_real_tl = max(-1.0, float(xirr_real_tl))
+
+-        distinct_months = len(set(str(c.get("date", ""))[:7] for c in sorted_contribs if c.get("date")))
++        distinct_months = len(set(str(c.get("date", ""))[:7] for c in cash_flow_rows if c.get("date")))
+         savings_tracker = {
+             "months_count": max(1, distinct_months),
+             "net_invested_tl": round(net_inv_tl, 2),
+@@ -1279,6 +1288,7 @@
+         "usd_rate_date": latest_snapshot_usd_date,
+         "base_currency": base_currency.upper(),
+         "cash_balance": round(float(cash), 2),
++        "cash_currency": "TRY",
+         "allocation_by_subcategory": subcat_alloc_pct,
+         "usd_protective_share_pct": usd_protective_share_pct,
+         "disclaimer": disclaimer,
+@@ -1891,6 +1901,7 @@
+         "label_en": port_news.get("label_en", "Insufficient data") if "port_news" in locals() and port_news else "Insufficient data",
+         "counts": port_news.get("counts", {"pos": 0, "neu": 0, "neg": 0, "total": 0}) if "port_news" in locals() and port_news else {"pos": 0, "neu": 0, "neg": 0, "total": 0},
+         "portfolio_themes": themes_needed,
++        "themes": port_news.get("themes", []) if "port_news" in locals() and port_news else [],
+         "top_headlines_per_theme": top_headlines_per_theme,
+         "details": {"tested_performance": tested_perf_str},
+     }
+--- a/news/bridge.py
++++ b/news/bridge.py
+@@ -461,8 +461,26 @@
+         f"over the last 7 days. Overall portfolio sentiment: {agg_current['label_en']} ({trend_en})."
+     )
+
++    theme_breakdown = []
++    for theme in portfolio_themes:
++        theme_items = [item for item in current_scored if theme in item["matched_themes"]]
++        sentiment = aggregate_sentiment(theme_items)
++        headline = (
++            {field: theme_items[0][field] for field in ("text", "source", "published_at")}
++            if sentiment["status"] == "success" else None
++        )
++        theme_breakdown.append({
++            "theme": theme,
++            "status": sentiment["label"],
++            "status_tr": sentiment["label_tr"],
++            "status_en": sentiment["label_en"],
++            "counts": sentiment["counts"],
++            "top_headline": headline,
++        })
++
+     return {
+         "portfolio_themes": portfolio_themes,
++        "themes": theme_breakdown,
+         "period_days": 7,
+         "status": agg_current["status"],
+         "label": agg_current["label"],

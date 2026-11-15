@@ -5,6 +5,7 @@
     <div class="bridge-valuation">
       <p class="bridge-kpi-label">{{ t.total }}</p>
       <p class="bridge-total">{% if p.total is not None %}{{ p.total|floatformat:'2g' }} <span>{{ currency }}</span>{% else %}—{% endif %}</p>
+      {% if p.as_of %}<p class="bridge-kpi-label">{{ t.snapshot_date }} · {{ p.as_of }}</p>{% endif %}
       <ul class="currency-list">
         {% for code, value in p.others %}{% if value is not None %}<li><span>{{ code }}</span>{{ value|floatformat:'2g' }}</li>{% endif %}{% endfor %}
       </ul>

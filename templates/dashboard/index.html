@@ -73,7 +73,7 @@
       <div class="bridge-list">
       {% for item in comments_data.items %}
         <article class="bridge-comment {% if item.severity == 'attention' %}attention{% endif %}">
-          <strong>{% if item.severity == 'attention' %}{{ t.attention }}{% else %}{{ t.info }}{% endif %}</strong>
+          <strong>{% if item.title %}{{ item.title }}{% elif item.severity == 'attention' %}{{ t.attention }}{% else %}{{ t.info }}{% endif %}</strong>
           <p class="source-copy">{{ item.display }}</p>
           {% include 'dashboard/_disclaimer.html' with text=item.disclaimer %}
         </article>
@@ -84,14 +84,16 @@
     <section class="panel bridge-card">
       <h2>{{ t.news }}</h2>
       {% include 'dashboard/_copy.html' with block=news_data %}
+      {% if news_data.status %}<p class="bridge-muted">{{ news_data.status }}</p>{% endif %}
+      {% if news_data.counts %}<div class="bridge-inline">{% for label, count in news_data.counts %}{% if count is not None %}<span>{{ label }} · <strong>{{ count }}</strong></span>{% endif %}{% endfor %}</div>{% endif %}
       <div class="bridge-list">
       {% for theme in news_data.themes %}
         <article class="bridge-comment">
-          <h3>{{ theme.name }}</h3><p class="bridge-muted">{{ theme.status|default:t.missing }}</p>
+          <h3>{{ theme.name }}</h3>{% if theme.status %}<p class="bridge-muted">{{ theme.status }}</p>{% endif %}
           {% if not theme.insufficient %}
             <div class="bridge-inline">{% for label, count in theme.counts %}{% if count is not None %}<span>{{ label }} · <strong>{{ count }}</strong></span>{% endif %}{% endfor %}</div>
-            {% if theme.headline.title %}<p class="source-copy">{{ theme.headline.title }}</p>{% endif %}
-            {% if theme.headline.source or theme.headline.date %}<small class="bridge-muted">{{ theme.headline.source }} {{ theme.headline.date }}</small>{% endif %}
+            {% with headline=theme.headline %}{% if headline.title or headline.text %}<p class="source-copy">{% firstof headline.title headline.text %}</p>{% endif %}
+            {% if headline.source or headline.date or headline.published_at %}<small class="bridge-muted">{{ headline.source }} {% firstof headline.date headline.published_at %}</small>{% endif %}{% endwith %}
           {% endif %}
         </article>
       {% empty %}<p class="bridge-muted">{{ t.missing }}</p>{% endfor %}
