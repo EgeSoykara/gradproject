@@ -1,1 +1,101 @@
-{% extends 'base.html' %}{% load i18n %}{% block content %}<div class="page-heading"><div><span class="eyebrow">{% translate "CONNECTED WHEN YOU'RE READY" %}</span><h1>{% translate "Data & settings" %}</h1><p>{% translate "Start locally. Add your own data sources as you go." %}</p></div><a class="button" href="{% url 'portfolio_create' %}">{% translate "＋ New portfolio" %}</a></div><div class="dashboard-grid"><section class="panel"><div class="panel-heading"><div><h2>{% translate "Your data connections" %}</h2><p>{% translate "Credentials are read from .env, never shown in this interface." %}</p></div></div>{% for p in providers %}<div class="provider-row"><div><strong>{{ p.name }}</strong><small>{{ p.variable }}</small></div><span class="pill {% if p.configured %}green{% else %}amber{% endif %}">{% if p.configured %}{% translate "Configured · unverified" %}{% else %}{% translate "Not configured" %}{% endif %}</span></div>{% endfor %}<p class="method-note">{% translate "Run" %} <code>python manage.py sync_data market</code>, <code>metals</code>, <code>news</code> {% translate "or" %} <code>social</code> {% translate "after configuring the relevant source. Market API expects the documented normalized JSON schema; it is not a direct TEFAS endpoint. Yahoo and TEFAS historical adapters use the fetch_history command. Full instructions are in docs/DATA_PROVIDERS.md." %}</p><p class="muted">{{ price_count }} {% translate "real-market price observations stored. Demo records are kept in a separate dataset." %}</p></section><section class="panel"><span class="eyebrow">{% translate "TRY THE COMPLETE WORKFLOW" %}</span><h2 class="spaced-heading">{% translate "A learning portfolio, ready to explore." %}</h2><p class="muted">{% translate "Load synthetic funds, gold and silver positions, historical sample prices and a private note. Your market portfolio remains separate." %}</p><form method="post" action="{% url 'demo_load' %}">{% csrf_token %}<button class="button secondary">{% translate "Open learning portfolio →" %}</button></form><p class="method-note">{% translate "Run" %} <code>python manage.py seed_demo</code> {% translate "once to prepare the dataset. Loading your learning portfolio again preserves your edits." %}</p></section></div><section class="panel"><div class="panel-heading"><div><h2>{% translate "Import historical market data" %}</h2><p>{% translate "CSV columns: type, symbol, date, value. Types: price or fx. Dates: YYYY-MM-DD." %}</p></div></div>{% if user.is_staff %}<form method="post" action="{% url 'market_import' %}" enctype="multipart/form-data" class="button-row">{% csrf_token %}<label>{% translate "CSV file" %} <input type="file" name="file" accept=".csv" required></label><button class="button">{% translate "Validate & import" %}</button></form>{% else %}<p class="muted">{% translate "Shared market-data imports require a local administrator. Use the command line or create an admin with" %} <code>python manage.py createsuperuser</code>.</p>{% endif %}<p class="method-note">{% translate "Imports validate the entire batch before committing. Existing observations with the same symbol, date and dataset are updated. Use Django admin to register real TEFAS fund symbols before importing their history. Demo fund symbols cannot be used in a market portfolio." %}</p></section><section class="panel"><div class="panel-heading"><h2>{% translate "Connection history" %}</h2></div><div class="table-scroll"><table><thead><tr><th>{% translate "Time" %}</th><th>{% translate "Provider" %}</th><th>{% translate "Status" %}</th><th>{% translate "Result" %}</th></tr></thead><tbody>{% for log in logs %}<tr><td>{{ log.created_at|date:'d M Y H:i' }}</td><td>{{ log.provider }}</td><td><span class="pill {% if log.status == 'success' %}green{% else %}amber{% endif %}">{% translate log.status %}</span></td><td>{{ log.message }}</td></tr>{% empty %}<tr><td colspan="4" class="empty-cell">{% translate "No sync attempts yet. Nothing connects to external providers automatically." %}</td></tr>{% endfor %}</tbody></table></div></section>{% endblock %}
+{% extends 'base.html' %}
+{% load i18n %}
+{% block content %}
+<div class="page-heading">
+  <div>
+    <h1>{% translate "Data & settings" %}</h1>
+    <p>{% translate "Check the data behind your portfolio and manage your workspaces." %}</p>
+  </div>
+  <a class="button" href="{% url 'portfolio_create' %}">{% translate "＋ New portfolio" %}</a>
+</div>
+<section class="panel" id="portfolio-data">
+  <div class="panel-heading">
+    <div>
+      <h2>{% translate "Portfolio data" %}</h2>
+      {% if active_portfolio %}<p>{{ active_portfolio.name }} · {{ active_portfolio.get_dataset_display }}{% if active_portfolio.archive_prices %} · {% translate "Analysis archive" %}{% endif %}</p>{% endif %}
+    </div>
+  </div>
+  <form method="get" action="#portfolio-data" class="filter-bar">
+    <label>{% translate "Currency" %}
+      <select name="currency">
+        {% for code, label in currencies %}<option value="{{ code }}"{% if code == currency %} selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+    </label>
+    <label>{% translate "Valuation date" %} <input name="asof" type="date" value="{{ asof|date:'Y-m-d' }}"></label>
+    <button class="subtle-button">{% translate "Apply filters" %}</button>
+  </form>
+  {% include 'portfolio/_quote_rows.html' with checks=quote_checks %}
+  <p class="method-note">{% translate "Valuation requires observations from the selected date or the previous seven calendar days." %}</p>
+  {% if active_portfolio.archive_prices %}<p class="method-note">{% translate "The default date follows the archive or a later recorded transaction." %}</p>{% endif %}
+</section>
+
+<div class="dashboard-grid">
+  <section class="panel" id="market-import">
+    <div class="panel-heading"><div>
+      <h2>{% translate "Import historical market data" %}</h2>
+      <p>{% translate "Imported observations are shared by market portfolios." %}</p>
+    </div></div>
+    {% if user.is_staff %}
+      <form method="post" action="{% url 'market_import' %}" enctype="multipart/form-data" class="button-row">
+        {% csrf_token %}
+        <label>{% translate "CSV or JSON file" %} <input type="file" name="file" accept=".csv,.json" required></label>
+        <button class="button">{% translate "Validate & import" %}</button>
+      </form>
+      <p><a class="text-link" href="{% url 'market_import_template' %}">{% translate "Download CSV template" %} ↓</a></p>
+      <details>
+        <summary>{% translate "File format and fund symbols" %}</summary>
+        <p class="method-note">{% translate "Use YYYY-MM-DD dates. A CSV row has a price or fx type, a symbol, a date and a value." %}</p>
+        <p class="method-note">{% translate "JSON accepts prices and rates arrays. See docs/DATA_PROVIDERS.md for an example." %}</p>
+        <p class="method-note">{% translate "Register TEFAS fund symbols in Django admin before importing their history. An observation with the same symbol and date replaces the previous entry." %}</p>
+      </details>
+    {% else %}
+      <p class="muted">{% translate "Ask an administrator to import the symbols and dates listed under Portfolio data." %}</p>
+    {% endif %}
+    <p class="method-note">
+      {% translate "Market prices" %} · {{ market_prices.count }} · {% translate "Last observation" %} {{ market_prices.latest|date:"j M Y"|default:"—" }}<br>
+      {% translate "Exchange rates" %} · {{ market_rates.count }} · {% translate "Last observation" %} {{ market_rates.latest|date:"j M Y"|default:"—" }}
+    </p>
+  </section>
+  <section class="panel">
+    <div class="panel-heading"><h2>{% translate "Learning portfolio" %}</h2></div>
+    <p class="muted">{% translate "Practice with synthetic prices, positions and transactions." %}</p>
+    <form method="post" action="{% url 'demo_load' %}">{% csrf_token %}<button class="button secondary">{% translate "Open learning portfolio →" %}</button></form>
+  </section>
+</div>
+
+{% if user.is_staff %}
+<section class="panel">
+  <details>
+    <summary><strong>{% translate "Your data connections" %}</strong></summary>
+    {% for p in providers %}
+      <div class="provider-row">
+        <div><strong>{{ p.name }}</strong><small>{{ p.variable }}</small></div>
+        <span class="pill {% if p.configured %}green{% else %}amber{% endif %}">
+          {% if p.configured %}{% translate "Configured · unverified" %}{% else %}{% translate "Not configured" %}{% endif %}
+        </span>
+      </div>
+    {% endfor %}
+    <p class="method-note">{% translate "Setup and sync commands are in docs/DATA_PROVIDERS.md." %}</p>
+  </details>
+</section>
+<section class="panel">
+  <div class="panel-heading"><h2>{% translate "Connection history" %}</h2></div>
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th scope="col">{% translate "Time" %}</th><th scope="col">{% translate "Provider" %}</th><th scope="col">{% translate "Status" %}</th><th scope="col">{% translate "Result" %}</th></tr></thead>
+      <tbody>
+        {% for log in logs %}
+          <tr>
+            <td>{{ log.created_at|date:"j M Y H:i" }}</td><td>{% translate log.provider %}</td>
+            <td><span class="pill {% if log.status == 'success' %}green{% else %}amber{% endif %}">{% translate log.status %}</span></td>
+            <td>{{ log.message }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="4" class="empty-cell">{% translate "No imports or sync attempts yet." %}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

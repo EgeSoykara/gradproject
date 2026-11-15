@@ -1,1 +1,27 @@
-{% extends 'base.html' %}{% load i18n %}{% block content %}<div class="page-heading"><div><span class="eyebrow">{% translate "THE WORLD AROUND YOUR PORTFOLIO" %}</span><h1>{% translate "Market brief" %}</h1><p>{% translate "A reading list and a measured look at the conversation." %}</p></div><a class="button secondary" href="{% url 'settings' %}">{% translate "Manage sources →" %}</a></div><div class="dashboard-grid"><section class="panel"><div class="panel-heading"><div><h2>{% translate "On the reading list" %}</h2><p>{% if active_portfolio.dataset == 'demo' %}{% translate "Fictional learning headlines" %}{% else %}{% translate "Imported economic news" %}{% endif %}</p></div></div>{% for article in articles %}<article class="news-item"><div class="news-meta"><span>{{ article.source }}</span><time>{{ article.published_at|date:'d M Y · H:i' }}</time></div><h3>{% if article.url %}<a href="{{ article.url }}" target="_blank" rel="noopener noreferrer">{{ article.title }} ↗</a>{% else %}{{ article.title }}{% endif %}</h3></article>{% empty %}<div class="empty-cell">{% translate "No articles yet. Configure NewsAPI in .env, then run the news sync command." %}</div>{% endfor %}</section><section class="panel"><div class="panel-heading"><div><h2>{% translate "Social sentiment" %}</h2><p>{{ sample_count }} {% translate "posts · VADER English lexicon" %}</p></div></div>{% if sample_count %}<div class="chart" data-chart="sentiment-data"></div>{{ sentiment_chart|json_script:'sentiment-data' }}<p class="method-note">{% translate "Latest post:" %} {{ latest_post.published_at|date:'d M Y H:i' }}{% translate ". Compound score ≥ 0.05 is positive; ≤ −0.05 is negative. This sample does not represent the entire market." %}</p>{% else %}<div class="empty-cell">{% translate "No social sample. Add an X API token or import a permitted JSON dataset." %}</div>{% endif %}<div class="subsection"><h3>{% translate "Read with context" %}</h3><p class="muted">{% translate "A lexicon baseline can misread irony, financial jargon and context. The bundled labeled fixture checks the implementation; it does not establish general accuracy on investment discussions." %}</p></div></section></div><section class="panel"><div class="panel-heading"><h2>{% translate "Behind the sentiment sample" %}</h2><span class="pill">{% if active_portfolio.dataset == 'demo' %}{% translate "Synthetic posts" %}{% else %}{% translate "Imported posts" %}{% endif %}</span></div><div class="posts-grid">{% for post in posts %}<article class="post"><span class="pill {% if post.sentiment >= 0.05 %}green{% elif post.sentiment <= -0.05 %}red{% endif %}">{% if post.sentiment >= 0.05 %}{% translate "Positive" %}{% elif post.sentiment <= -0.05 %}{% translate "Negative" %}{% else %}{% translate "Neutral" %}{% endif %}</span><p>{{ post.title }}</p><small>{{ post.source }} · {{ post.published_at|date:'d M H:i' }}{% if post.url %} · <a href="{{ post.url }}" target="_blank" rel="noopener noreferrer">{% translate "Source ↗" %}</a>{% endif %}</small></article>{% empty %}<p class="empty-cell">{% translate "Imported posts will appear here with their source and publication time." %}</p>{% endfor %}</div></section>{% endblock %}
+{% extends 'base.html' %}
+{% load i18n %}
+{% block content %}
+<div class="page-heading">
+  <div><h1>{% translate "Market brief" %}</h1><p>{% translate "Source-linked headlines stored in this workspace." %}</p></div>
+  <a class="button secondary" href="{% url 'settings' %}">{% translate "Manage sources →" %}</a>
+</div>
+<section class="panel">
+  <div class="panel-heading">
+    <div>
+      <h2>{% translate "On the reading list" %}</h2>
+      <p>{% if active_portfolio.dataset == 'demo' %}{% translate "Fictional learning headlines" %}{% else %}{% translate "Imported economic news" %}{% endif %}</p>
+    </div>
+    {% if archive_analysis %}
+      <a class="text-link" href="{% url 'ai_dashboard' %}#dashboard-news">{% translate "Open FinTurkBERT news analysis" %} →</a>
+    {% endif %}
+  </div>
+  {% for article in articles %}
+    <article class="news-item">
+      <div class="news-meta"><span>{{ article.source }}</span><time datetime="{{ article.published_at|date:'c' }}">{{ article.published_at|date:'d M Y · H:i' }}</time></div>
+      <h3>{% if article.url %}<a href="{{ article.url }}" target="_blank" rel="noopener noreferrer">{{ article.title }} ↗</a>{% else %}{{ article.title }}{% endif %}</h3>
+    </article>
+  {% empty %}
+    <p class="empty-cell">{% translate "No articles yet. Configure NewsAPI in .env, then run the news sync command." %}</p>
+  {% endfor %}
+</section>
+{% endblock %}

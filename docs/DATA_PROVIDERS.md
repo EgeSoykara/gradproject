@@ -24,7 +24,7 @@ TEFAS requests investment funds (`YAT`) and imports matching fund codes, names a
 
 GoldAPI requests XAU, XAG and XPT in USD per troy ounce. The adapter divides by **31.1034768** and multiplies by the stored USD/TRY rate on or before the quote's UTC date, yielding TRY per gram. FX must already be present. These are spot snapshots, not guaranteed daily closing prices or executable bank quotes. Multi-year metal history should use an appropriate licensed export through CSV/JSON. The source label records the spot conversion.
 
-NewsAPI requests at most 50 recent English articles. X requests at most 50 recent matching English posts; no pagination or claim of exhaustive coverage is made. Saved timestamps and source links remain visible. VADER is a lexical English baseline, with compound-score thresholds ±0.05. Imported posts can substitute for API access without pretending to be a live stream.
+NewsAPI requests at most 50 recent English articles. X requests at most 50 recent matching English posts; no pagination or claim of exhaustive coverage is made. Saved timestamps and source links remain visible. The Django market brief lists imported headlines. Archived portfolio sentiment comes from FinTurkBERT in the local engine. The dashboard does not synchronize X, and automated tests use fixtures with network access blocked.
 
 ## Market CSV
 

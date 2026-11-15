@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static i18n %}
 {% block title %}{{ t.title }} · PortfolioAI{% endblock %}
-{% block styles %}<link rel="stylesheet" href="{% static 'dashboard.css' %}?v=portfolio-start">{% endblock %}
+{% block styles %}<link rel="stylesheet" href="{% static 'dashboard.css' %}?v=score-percentage">{% endblock %}
 {% block content %}
 <div class="bridge-dashboard" data-level="{{ level }}" data-profile="{{ profile }}">
   <header class="bridge-heading">
@@ -31,8 +31,12 @@
   {% elif data_unavailable %}
     <section class="panel dashboard-start">
       <h2>{{ t.unavailable }}</h2>
-      {% if data_error %}<p role="status">{{ data_error }}</p><p>{{ t.missing_data_help }}</p>{% endif %}
-      <a class="button secondary" href="{% url 'settings' %}">{{ t.manage_data }}</a>
+      {% if data_error %}<p role="status">{{ data_error }}</p>{% endif %}
+      {% if quote_issues %}
+        {% include 'portfolio/_quote_issue_details.html' with checks=quote_issues action=t.manage_data %}
+      {% else %}
+        <a class="button secondary" href="{% url 'settings' %}">{{ t.manage_data }}</a>
+      {% endif %}
     </section>
   {% else %}
     {{ payload|json_script:'dashboard-payload' }}
@@ -57,7 +61,25 @@
       </section>
     {% endif %}
 
-    {% if uses_archive and snap.holdings and not full_analysis %}<p class="message" role="status">{{ t.archive_analysis_unavailable }}</p>{% endif %}
+    {% if uses_archive and snap.holdings and not full_analysis %}<p class="message" id="dashboard-news" role="status">{{ t.archive_analysis_unavailable }}</p>{% endif %}
+
+    {% if ledger_score is not None and not full_analysis %}
+      {% translate "How the score is calculated from portfolio history" as ledger_risk_hint %}
+      <details class="dashboard-detail" id="dashboard-ledger-risk">
+        {% include 'dashboard/_section_summary.html' with title=t.robustness hint=ledger_risk_hint icon='i-chart' %}
+        <div class="dashboard-detail-body bridge-card">
+          <div class="score-panel">
+            <div class="dashboard-score-heading">
+              <p class="bridge-kpi-label">{% translate "Based on portfolio history" %}</p>
+              <strong class="dashboard-score-value">{% include 'dashboard/_score_percentage.html' with value=ledger_score %}</strong>
+            </div>
+            <meter min="0" max="100" value="{{ ledger_score|stringformat:'s' }}" aria-label="{{ t.score }}"></meter>
+          </div>
+          <p class="dashboard-explainer">{% translate "The score rises when past swings and losses are smaller and holdings are more evenly distributed." %}</p>
+          <p class="bridge-muted">{% translate "Weights are 40 percent volatility, 40 percent drawdown and 20 percent diversification. Volatility or drawdown of 60 percent or more earns zero points for that component." %}</p>
+        </div>
+      </details>
+    {% endif %}
 
     {% if full_analysis %}
     {% if highlights %}
@@ -117,28 +139,38 @@
     </div>
     {% endif %}
   {% endif %}
-  {% if level == 'expert' and not onboarding %}
+  {% if level == 'expert' and not onboarding and not data_unavailable %}
     <section class="dashboard-expert" id="dashboard-expert" aria-labelledby="dashboard-expert-title">
       <h2 id="dashboard-expert-title">{{ t.expert_tools }}</h2>
+      {% if snap.holdings %}
+        {% translate "Historical risk" as risk_title %}
+        {% translate "Volatility, drawdown and Sharpe ratio" as risk_hint %}
+        <details class="dashboard-detail" id="dashboard-historical-risk">
+          {% include 'dashboard/_section_summary.html' with title=risk_title hint=risk_hint icon='i-chart' %}
+          <div class="dashboard-detail-body bridge-card">{% include 'dashboard/_historical.html' %}</div>
+        </details>
+      {% endif %}
       {% if not data_unavailable %}
         <details class="dashboard-detail" id="dashboard-correlation">
           {% include 'dashboard/_section_summary.html' with title=t.correlation hint=t.correlation_hint icon='i-chart' %}
           <div class="dashboard-detail-body bridge-card">
             {% if correlation_data %}
               <p class="dashboard-explainer">{{ t.correlation_note }}</p>
-              <p class="bridge-muted">{{ t.correlation_period }} · {{ correlation_data.observations }} · {{ correlation_data.start|date:"j M Y" }} – {{ correlation_data.end|date:"j M Y" }}</p>
+              <p class="bridge-muted">{{ t.correlation_period }} · {{ currency }} · {{ correlation_data.observations }} · {{ correlation_data.start|date:"j M Y" }} – {{ correlation_data.end|date:"j M Y" }}</p>
               {% include 'dashboard/_chart.html' with figure=correlation_data.chart chart_id='bridge-correlation' label=t.correlation %}
             {% elif mock %}<p class="bridge-muted">{{ t.correlation_sample }}</p>
-            {% elif not uses_archive %}<p class="bridge-muted">{{ t.ledger_correlation }}</p>
             {% else %}<p class="bridge-muted">{{ t.correlation_missing }}</p>{% endif %}
           </div>
         </details>
       {% endif %}
-      {% if not mock %}<a class="dashboard-detail dashboard-expert-link" href="{% url 'model_lab' %}">
-        <span class="dashboard-detail-icon" aria-hidden="true"><svg><use href="#i-spark"/></svg></span>
-        <span class="dashboard-detail-label"><strong>{{ t.lab }}</strong><small>{{ t.lab_hint }}</small></span>
-        <span aria-hidden="true">→</span>
-      </a>{% endif %}
+      {% if stress_scenarios %}
+        {% translate "Historical scenarios" as stress_title %}
+        {% translate "Estimated effects of previous market shocks" as stress_hint %}
+        <details class="dashboard-detail" id="dashboard-historical-scenarios">
+          {% include 'dashboard/_section_summary.html' with title=stress_title hint=stress_hint icon='i-chart' %}
+          <div class="dashboard-detail-body bridge-card">{% include 'dashboard/_stress.html' %}</div>
+        </details>
+      {% endif %}
     </section>
   {% endif %}
 </div>

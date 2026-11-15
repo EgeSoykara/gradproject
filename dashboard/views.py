@@ -13,14 +13,14 @@ from django.views.decorators.http import require_POST, require_safe
 
 from portfolio.context import workspace
 from portfolio.models import CURRENCIES
-from portfolio.services.valuation import MissingData
+from portfolio.services.analytics import portfolio_correlation, stress_tests
+from portfolio.services.valuation import MissingData, portfolio_book
 
 from .models import LANGUAGES, LEVELS, PROFILES, DashboardPreferences
 from .presentation import correlation_context, dashboard_context, dashboard_labels
 from .services import (
     DEFAULT_FIXTURE,
     DashboardUnavailable,
-    archive_correlation,
     load_dashboard,
     mock_choices,
     mock_profile_reference,
@@ -50,15 +50,18 @@ class DashboardQuery(forms.Form):
         self.fields['fixture'] = forms.ChoiceField(choices=mock_choices(), required=False)
 
 
-def read_payload(request, preferences, params, portfolio):
+def read_payload(request, preferences, params, portfolio, book=None):
     lang = params.get('lang') or request.LANGUAGE_CODE
     fixture = params.get('fixture')
     if fixture:
         return load_dashboard(request.user, lang, fixture=fixture), None, True
     if portfolio is None:
         raise DashboardUnavailable('Select or create a portfolio.')
-    return workspace_payload(portfolio, params.get('currency') or preferences.currency,
-                             params.get('profile') or preferences.profile, lang)
+    return workspace_payload(
+        portfolio, params.get('currency') or preferences.currency,
+        params.get('profile') or preferences.profile, lang, book=book,
+        include_history=(params.get('level') or preferences.level) == 'expert',
+    )
 
 
 def selected_fixture(request, fixture=None):
@@ -88,6 +91,7 @@ def dashboard(request):
         'level': params.get('level') or preferences.level,
         'monthly_contribution': preferences.monthly_contribution,
         'mock': mock,
+        'ledger_score': None,
         'onboarding': not mock and not has_transactions,
         'selected_workspace': bool(portfolio and request.session.get('portfolio_id') == portfolio.pk),
         'uses_archive': bool(portfolio and portfolio.archive_prices),
@@ -110,11 +114,14 @@ def dashboard(request):
         translation.activate(context['language'])
         request.LANGUAGE_CODE = context['language']
     if not context['onboarding']:
+        book = portfolio_book(portfolio) if portfolio and not mock else None
         try:
-            payload, snap, full_analysis = read_payload(request, preferences, params, portfolio)
+            payload, snap, full_analysis = read_payload(request, preferences, params, portfolio, book)
         except (DashboardUnavailable, MissingData) as exc:
             logger.info('Dashboard data unavailable', exc_info=True)
             context.update(data_unavailable=True, data_error=str(exc) if isinstance(exc, MissingData) else '')
+            if isinstance(exc, MissingData):
+                context['quote_issues'] = exc.checks
         else:
             reference = mock_profile_reference(context['profile']) if mock else None
             context.update(dashboard_context(
@@ -124,10 +131,18 @@ def dashboard(request):
             context.update(snap=snap, full_analysis=full_analysis)
             if not mock and snap and not snap['holdings']:
                 context['first_purchase'] = not portfolio.transactions.filter(kind='buy').exists()
-            if context['level'] == 'expert' and full_analysis and not mock:
-                result = archive_correlation(payload)
+            risk = payload.get('historical_risk') or {}
+            context.update(
+                historical_risk=risk,
+                history_error=payload.get('historical_risk_error'),
+                ledger_score=risk.get('score'),
+            )
+            if context['level'] == 'expert' and snap and snap['holdings']:
+                result = portfolio_correlation(snap, book)
                 if result is not None:
                     context['correlation_data'] = correlation_context(result)
+                if not full_analysis:
+                    context['stress_scenarios'] = stress_tests(snap, book)
     return render(request, 'dashboard/index.html', context)
 
 
@@ -164,7 +179,10 @@ def dashboard_api(request):
     try:
         portfolio = workspace(request).get('active_portfolio')
         payload, _, _ = read_payload(request, preferences or DashboardPreferences(), query.cleaned_data, portfolio)
-    except (DashboardUnavailable, MissingData):
+    except (DashboardUnavailable, MissingData) as exc:
         logger.info('Dashboard data unavailable', exc_info=True)
-        return JsonResponse({'error': 'Dashboard data is unavailable.'}, status=503)
+        error = {'error': 'Dashboard data is unavailable.'}
+        if isinstance(exc, MissingData):
+            error['quote_issues'] = [check.public() for check in exc.checks]
+        return JsonResponse(error, status=503)
     return JsonResponse(payload, json_dumps_params={'ensure_ascii': False})

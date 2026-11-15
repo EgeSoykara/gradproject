@@ -1,4 +1,7 @@
-{% if funds %}<p class="dashboard-explainer">{{ t.funds_explain }}</p>{% endif %}
+{% if funds %}
+  <p class="dashboard-explainer">{{ t.funds_explain }}</p>
+  {% if not mock %}<p class="bridge-muted">GRU</p>{% endif %}
+{% endif %}
 <div class="dashboard-fund-list">
   {% for fund in funds %}
     <details class="dashboard-secondary dashboard-fund{% if fund.ineligible %} dashboard-fund-ineligible{% endif %}">

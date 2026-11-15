@@ -44,6 +44,13 @@ def risk_metrics(returns, weights=(), annual_risk_free=0.0):
     }
 
 
+def portfolio_risk(frame, snap):
+    weights = [holding['weight'] / 100 for holding in snap['holdings']]
+    if snap['total']:
+        weights.append(float(snap['cash'] / snap['total']))
+    return risk_metrics(frame['return'].iloc[1:], weights)
+
+
 def stress_tests(snap, book):
     windows = [
         (_('Pandemic window'), date(2020, 2, 19), date(2020, 3, 23)),
@@ -72,18 +79,29 @@ def stress_tests(snap, book):
                 }
             )
         except MissingData as exc:
-            results.append({'name': name, 'error': str(exc)})
+            results.append({'name': name, 'start': start, 'end': end, 'error': str(exc)})
     return results
 
 
-def correlation_matrix(snap, book):
+def portfolio_correlation(snap, book):
+    if len(snap['holdings']) < 2:
+        return None
     data = {}
-    for h in snap['holdings']:
-        aid = h['asset'].id
-        rows = book.prices.get(aid, [])[-253:]
-        data[h['asset'].symbol] = pd.Series(
-            {d: float(p * book.rate(h['asset'].currency, d)) for d, p in rows}
-        )
-    if len(data) < 2:
-        return pd.DataFrame()
-    return pd.DataFrame(data).pct_change(fill_method=None).dropna().corr()
+    for holding in snap['holdings']:
+        asset = holding['asset']
+        quotes, _ = book.price_series(asset.id)
+        prices = {}
+        for quote in quotes:
+            if quote.date > snap['asof']:
+                break
+            try:
+                rate = book.rate(asset.currency, quote.date) / book.rate(snap['currency'], quote.date)
+                prices[quote.date] = float(quote.value * rate)
+            except MissingData:
+                continue
+        data[asset.symbol] = pd.Series(prices, dtype=float)
+    aligned = pd.DataFrame(data).sort_index().dropna().tail(253)
+    returns = aligned.pct_change(fill_method=None).dropna()
+    if len(returns) < 30 or (returns.nunique() < 2).any():
+        return None
+    return returns.corr(), len(returns), aligned.index[0], aligned.index[-1]

@@ -1,0 +1,44 @@
+{% load i18n %}
+<div class="table-scroll">
+  <table>
+    <thead><tr>
+      <th scope="col">{% translate "Asset or exchange rate" %}</th>
+      <th scope="col">{% translate "Last observation" %}</th>
+      <th scope="col">{% translate "Source" %}</th>
+      <th scope="col">{% translate "Status" %}</th>
+    </tr></thead>
+    <tbody>
+      {% for check in checks %}
+        <tr>
+          <th scope="row">{{ check.symbol }}</th>
+          <td>{% if check.quote %}{{ check.quote.date|date:"j M Y" }}{% else %}—{% endif %}</td>
+          <td>
+            {% if check.quote %}{% translate check.quote.source %}
+            {% elif check.origin == 'archive' %}{% translate "Analysis archive" %}
+            {% elif check.origin == 'demo' %}{% translate "Learning data" %}
+            {% else %}{% translate "Market data" %}{% endif %}
+          </td>
+          <td>
+            {% if check.status == 'ready' %}
+              <span class="pill green">{% translate "Available" %}</span>
+            {% elif check.status == 'stale' %}
+              <span class="pill amber">{% translate "Outdated" %}</span>
+              <small>{% blocktranslate count days=check.age %}{{ days }} day old{% plural %}{{ days }} days old{% endblocktranslate %}</small>
+            {% else %}
+              <span class="pill amber">{% translate "Missing" %}</span>
+            {% endif %}
+            {% if check.status != 'ready' %}
+              <small>
+                {% if check.origin == 'archive' %}{% translate "Update the local analysis archive." %}
+                {% elif check.origin == 'demo' %}{% translate "Reload the learning data." %}
+                {% else %}{% translate "Ask an administrator to import the missing history." %}{% endif %}
+              </small>
+            {% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="4" class="empty-cell">{% translate "No price or exchange-rate inputs are required for this selection." %}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

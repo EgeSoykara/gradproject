@@ -1,3 +1,4 @@
+{% load i18n %}
 <div class="dashboard-balance">
   <div class="dashboard-balance-label">
     <svg aria-hidden="true"><use href="#i-wallet"/></svg>
@@ -13,10 +14,20 @@
     </div>
     {% if full_analysis %}<div>
       <dt><a href="#dashboard-risk">{{ t.robustness }} <span aria-hidden="true">↗</span></a></dt>
-      <dd>{% if robustness_data.score is not None %}{{ robustness_data.score }} <span>/ 100</span>{% else %}—{% endif %}</dd>
+      <dd>{% if robustness_data.score is not None %}{% include 'dashboard/_score_percentage.html' with value=robustness_data.score %}{% else %}—{% endif %}</dd>
       <dd class="dashboard-score-source">{{ robustness_source }}</dd>
+    </div>{% elif ledger_score is not None %}<div>
+      <dt><a href="#dashboard-ledger-risk">{{ t.robustness }} <span aria-hidden="true">↗</span></a></dt>
+      <dd>{% include 'dashboard/_score_percentage.html' with value=ledger_score %}</dd>
+      <dd class="dashboard-score-source">{% translate "Based on portfolio history" %}</dd>
     </div>{% endif %}
   </dl>
+  {% if snap.oldest_quote %}
+    <p class="dashboard-data-dates">
+      {% translate "Valuation date" %} · {{ snap.asof|date:"j M Y" }}<br>
+      {% include 'portfolio/_quote_dates.html' %}
+    </p>
+  {% endif %}
 </div>
 <div class="panel dashboard-allocation">
   <h2>{{ t.allocation }}</h2>

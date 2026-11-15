@@ -34,6 +34,5 @@ threadpoolctl==3.7.0
 typing_extensions==4.16.0
 tzdata==2026.4
 urllib3==2.8.0
-vaderSentiment==3.3.2
 websockets==17.1
 yfinance==1.7.0

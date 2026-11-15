@@ -76,5 +76,5 @@ SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = 'Lax'
 X_FRAME_OPTIONS = 'DENY'
 DATA_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
-ML_MODEL_CLASS = os.getenv('ML_MODEL_CLASS', 'sklearn.ensemble.RandomForestRegressor')
+TEST_RUNNER = 'config.test_runner.OfflineTestRunner'
 PORTFOLIO_AI_HOME = Path(os.getenv('PORTFOLIO_AI_HOME') or BASE_DIR.parent / 'PortfolioAI_Ege').resolve()

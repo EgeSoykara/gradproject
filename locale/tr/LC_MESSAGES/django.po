@@ -905,30 +905,6 @@ msgstr "CSV dosyasının kodlaması UTF-8 olmalı."
 msgid "The chart could not be loaded. Refresh the page to try again."
 msgstr "Grafik yüklenemedi. Tekrar denemek için sayfayı yenile."
 
-msgid ""
-"The default random forest uses lagged returns, 5/20-period momentum, a 20-period moving-average "
-"gap and volatility to predict the next observation's return. The final 20% of data is held out, "
-"with a one-observation purge. Three expanding-window splits evaluate training stability. A zero-"
-"return forecast is the baseline. A separate estimator is then refit on available labeled "
-"observations."
-msgstr ""
-"Varsayılan Random Forest modeli, sonraki gözlemin getirisini tahmin etmek için gecikmeli "
-"getirileri, 5 ve 20 dönemlik momentumu, 20 dönemlik hareketli ortalamaya uzaklığı ve oynaklığı "
-"kullanır. Son %20 test için ayrılır ve sınırda bir gözlem atlanır. Eğitim kararlılığı üç "
-"genişleyen pencereyle sınanır. Referans tahmin sıfır getiridir. Son model mevcut etiketli "
-"gözlemlerle yeniden eğitilir."
-
-msgid ""
-"The model strategy holds the asset when the forecast exceeds 0.1%, otherwise cash, charging 0.1%"
-" per position change. Backtests omit slippage, taxes and settlement constraints. Same-close "
-"execution is an optimistic simplifying assumption. Forecasts have no calibrated confidence "
-"interval. The estimator can be replaced through ML_MODEL_CLASS."
-msgstr ""
-"Geriye dönük testte model tahmini %0,1’i aştığında varlık, diğer durumlarda nakit tutulur. Her "
-"pozisyon değişimine %0,1 maliyet yazılır. Testte kayma, vergi ve takas kısıtları hesaba "
-"katılmaz. İşlemlerin kapanış fiyatında gerçekleştiği varsayılır. Tahminler için kalibre edilmiş "
-"güven aralığı yoktur. Model, ML_MODEL_CLASS ayarıyla değiştirilebilir."
-
 msgid "The resulting number of units is too large."
 msgstr "Hesaplanan pay adedi çok büyük."
 
@@ -1148,9 +1124,6 @@ msgstr ""
 msgid "or"
 msgstr "veya"
 
-msgid "posts · VADER English lexicon"
-msgstr "gönderi · VADER İngilizce sözlüğü"
-
 msgid "quote return"
 msgstr "fiyat getirisi"
 
@@ -1202,9 +1175,6 @@ msgstr "Sentetik demo fiyatları"
 msgid "Recorded market prices"
 msgstr "Kayıtlı piyasa fiyatları"
 
-msgid "Model Lab"
-msgstr "Model Laboratuvarı"
-
 msgid "Inspect stored price forecasts and how the model performed on historical data."
 msgstr "Kayıtlı fiyat tahminlerini ve modelin geçmiş verilerdeki performansını incele."
 
@@ -1234,3 +1204,188 @@ msgstr "Arşiv fiyatlarını ve analiz motorunu kullan"
 
 msgid "This portfolio has no assets with price history yet. A local administrator can import market prices."
 msgstr "Bu portföye ait fiyat geçmişi bulunan varlık yok. Ortak piyasa fiyatlarını yerel yönetici içe aktarabilir."
+
+msgid "Asset or exchange rate"
+msgstr "Varlık veya döviz kuru"
+
+msgid "Last observation"
+msgstr "Son veri tarihi"
+
+msgid "Analysis archive"
+msgstr "Analiz arşivi"
+
+msgid "Learning data"
+msgstr "Eğitim verisi"
+
+msgid "Available"
+msgstr "Hazır"
+
+msgid "Outdated"
+msgstr "Güncelliğini yitirmiş"
+
+msgid "Missing"
+msgstr "Eksik"
+
+msgid "Update the local analysis archive."
+msgstr "Yerel analiz arşivini güncelle."
+
+msgid "Reload the learning data."
+msgstr "Eğitim verisini yeniden hazırla."
+
+msgid "Ask an administrator to import the missing history."
+msgstr "Eksik geçmişi içe aktarması için bir yöneticiye başvur."
+
+msgid "No price or exchange-rate inputs are required for this selection."
+msgstr "Bu seçim için fiyat veya kur verisi gerekmiyor."
+
+msgid "Data dates"
+msgstr "Veri tarihleri"
+
+msgid "Check the data behind your portfolio and manage your workspaces."
+msgstr "Portföyünde kullanılan verileri kontrol et ve portföylerini yönet."
+
+msgid "Portfolio data"
+msgstr "Portföy verileri"
+
+msgid "Valuation date"
+msgstr "Değerleme tarihi"
+
+msgid "Valuation requires observations from the selected date or the previous seven calendar days."
+msgstr "Değerleme için seçilen tarihte veya önceki yedi takvim gününde kaydedilmiş veri gerekir."
+
+msgid "Imported observations are shared by market portfolios."
+msgstr "İçe aktarılan veriler piyasa portföylerinde ortak kullanılır."
+
+msgid "CSV or JSON file"
+msgstr "CSV veya JSON dosyası"
+
+msgid "Download CSV template"
+msgstr "CSV şablonunu indir"
+
+msgid "File format and fund symbols"
+msgstr "Dosya biçimi ve fon kodları"
+
+msgid "Use YYYY-MM-DD dates. A CSV row has a price or fx type, a symbol, a date and a value."
+msgstr "Tarihleri YYYY-MM-DD biçiminde yaz. Her CSV satırında tür (price ya da fx), kod, tarih ve değer bulunur."
+
+msgid "JSON accepts prices and rates arrays. See docs/DATA_PROVIDERS.md for an example."
+msgstr "JSON dosyası prices ve rates dizilerini kabul eder. Örnek için docs/DATA_PROVIDERS.md dosyasına bak."
+
+msgid "Register TEFAS fund symbols in Django admin before importing their history. An observation with the same symbol and date replaces the previous entry."
+msgstr "Geçmişi içe aktarmadan önce TEFAS fon kodlarını Django yönetiminde ekle. Aynı kod ve tarihteki veri önceki kaydın yerini alır."
+
+msgid "Ask an administrator to import the symbols and dates listed under Portfolio data."
+msgstr "Portföy verileri bölümündeki kod ve tarihleri içe aktarması için bir yöneticiye başvur."
+
+msgid "Market prices"
+msgstr "Piyasa fiyatları"
+
+msgid "Exchange rates"
+msgstr "Döviz kurları"
+
+msgid "Learning portfolio"
+msgstr "Eğitim portföyü"
+
+msgid "Practice with synthetic prices, positions and transactions."
+msgstr "Yapay fiyatlar ve işlem kayıtlarıyla uygulamayı dene."
+
+msgid "Setup and sync commands are in docs/DATA_PROVIDERS.md."
+msgstr "Kurulum ve eşitleme komutları docs/DATA_PROVIDERS.md dosyasında."
+
+msgid "No imports or sync attempts yet."
+msgstr "Henüz içe aktarma veya eşitleme kaydı yok."
+
+msgid "Historical risk"
+msgstr "Geçmiş risk ölçümleri"
+
+msgid "Volatility, drawdown and Sharpe ratio"
+msgstr "Oynaklık, düşüş ve Sharpe oranı"
+
+msgid "Daily observations"
+msgstr "Günlük gözlem sayısı"
+
+
+msgid "Estimates how today's holdings and cash would have moved during each historical period."
+msgstr "Bugünkü varlıkların ve nakdin her tarihsel dönemde nasıl değer değiştirebileceğini hesaplar."
+
+msgid "Scenario"
+msgstr "Senaryo"
+
+msgid "Estimated change"
+msgstr "Tahmini değişim"
+
+msgid "Historical scenarios"
+msgstr "Tarihsel senaryolar"
+
+msgid "Estimated effects of previous market shocks"
+msgstr "Geçmiş piyasa şoklarının tahmini etkileri"
+
+msgid "Performance history unavailable."
+msgstr "Geçmiş performans hesaplanamıyor."
+
+msgid "No %(label)s on or before %(day)s."
+msgstr "%(day)s tarihinde veya öncesinde %(label)s verisi yok."
+
+msgid "Some required prices or exchange rates are unavailable."
+msgstr "Gerekli fiyat veya kurlardan bazıları eksik ya da güncel değil."
+
+msgid "Choose a nonempty CSV or JSON file up to 5 MB."
+msgstr "5 MB veya daha küçük, boş olmayan bir CSV veya JSON dosyası seç."
+
+msgid "Choose a file ending in .csv or .json."
+msgstr ".csv veya .json uzantılı bir dosya seç."
+
+msgid "The file must use UTF-8 encoding."
+msgstr "Dosya UTF-8 kodlamasıyla kaydedilmiş olmalı."
+
+msgid "The file contains invalid or excessively nested JSON."
+msgstr "Dosya geçersiz ya da aşırı iç içe geçmiş bir JSON içeriyor."
+
+msgid "Each CSV row must contain all four columns."
+msgstr "Her CSV satırı dört sütunun hepsini içermeli."
+
+msgid "File import"
+msgstr "Dosya aktarımı"
+
+msgid "CSV import"
+msgstr "CSV aktarımı"
+
+msgid "JSON import"
+msgstr "JSON aktarımı"
+
+msgid "synthetic"
+msgstr "yapay veri"
+
+msgid "%(days)s day old"
+msgid_plural "%(days)s days old"
+msgstr[0] "%(days)s gün önce"
+
+msgid "Source"
+msgstr "Kaynak"
+
+msgid "Based on portfolio history"
+msgstr "Portföy geçmişinden hesaplandı"
+
+msgid "How the score is calculated from portfolio history"
+msgstr "Portföy geçmişinden puan hesaplama yöntemi"
+
+msgid "The score rises when past swings and losses are smaller and holdings are more evenly distributed."
+msgstr "Geçmişteki dalgalanmalar ve düşüşler küçüldükçe ve portföy daha dengeli dağıldıkça puan artar."
+
+msgid "Weights are 40 percent volatility, 40 percent drawdown and 20 percent diversification. Volatility or drawdown of 60 percent or more earns zero points for that component."
+msgstr "Ağırlıklar yüzde 40 oynaklık, yüzde 40 en büyük düşüş ve yüzde 20 çeşitlendirmedir. Oynaklık veya düşüş yüzde 60'a ulaşırsa ilgili bileşen sıfır puan alır."
+
+msgid "Drawdown measures the largest decline from a previous peak. Sharpe divides annualized excess return by volatility, using a zero reference rate."
+msgstr "En büyük düşüş, önceki bir zirveden yaşanan en büyük değer kaybını ölçer. Sharpe oranı, sıfır referans getiri üzerinden yıllıklandırılmış fazla getiriyi oynaklığa böler."
+
+msgid "The default date follows the archive or a later recorded transaction."
+msgstr "Varsayılan değerleme tarihi arşiv tarihini veya daha sonra kaydedilmiş bir işlemin tarihini izler."
+
+msgid "Synthetic seeded dataset v1"
+msgstr "Yapay eğitim verisi v1"
+
+msgid "Source-linked headlines stored in this workspace."
+msgstr "Bu çalışma alanında kayıtlı, kaynak bağlantılı haberler."
+
+msgid "Open FinTurkBERT news analysis"
+msgstr "FinTurkBERT haber analizini aç"

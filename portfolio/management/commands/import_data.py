@@ -1,3 +1,4 @@
+import csv
 import json
 from pathlib import Path
 
@@ -29,5 +30,5 @@ class Command(BaseCommand):
             else:
                 count = import_articles(json.loads(text), options['dataset'], kind=options['kind'])
             self.stdout.write(self.style.SUCCESS(f'Imported {count} records.'))
-        except (ProviderError, OSError, ValueError) as exc:
+        except (ProviderError, OSError, ValueError, csv.Error) as exc:
             raise CommandError(str(exc))

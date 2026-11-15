@@ -125,6 +125,8 @@ class NewsItem(models.Model):
 
 
 class ModelRun(models.Model):
+    """Legacy training records retained for existing local databases."""
+
     asset = models.ForeignKey(Asset, on_delete=models.CASCADE)
     dataset = models.CharField(max_length=4, choices=DATASETS)
     model_name = models.CharField(max_length=120)

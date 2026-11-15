@@ -1,4 +1,4 @@
-"""Unpack the supplied engine beside Django and apply its compatibility patch."""
+"""Unpack the supplied engine beside Django and apply its compatibility patches."""
 
 import argparse
 import os
@@ -48,14 +48,15 @@ def unpack_engine(archive, staging):
 
 
 def apply_patch(engine):
-    patch = UI_ROOT / 'integrations' / 'ai-engine.patch'
     command = ['git', 'apply', '--ignore-space-change']
-    applied = subprocess.run(
-        [*command, '--reverse', '--check', str(patch)], cwd=engine, capture_output=True
-    )
-    if applied.returncode:
-        subprocess.run([*command, '--check', str(patch)], cwd=engine, check=True)
-        subprocess.run([*command, str(patch)], cwd=engine, check=True)
+    for name in ('ai-engine.patch', 'only-finturkbert-news.patch'):
+        patch = UI_ROOT / 'integrations' / name
+        applied = subprocess.run(
+            [*command, '--reverse', '--check', str(patch)], cwd=engine, capture_output=True
+        )
+        if applied.returncode:
+            subprocess.run([*command, '--check', str(patch)], cwd=engine, check=True)
+            subprocess.run([*command, str(patch)], cwd=engine, check=True)
 
 
 def main():

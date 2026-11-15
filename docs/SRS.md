@@ -4,7 +4,7 @@ Version 1.0 · 1 October 2026
 
 ## 1 Introduction
 
-PortfolioAI implements the supplied **AI-Assisted Portfolio Management System** graduation proposal using Python and Django. Its purpose is educational portfolio accounting, visualization and data-driven decision support on a standard personal computer. The user approved English UI/documentation, local execution, general metal reference prices, future API-key configuration and a replaceable lightweight model. No fixed delivery date was requested.
+PortfolioAI implements the supplied **AI-Assisted Portfolio Management System** graduation proposal using Python and Django. Its purpose is educational portfolio accounting, visualization and data-driven decision support on a standard personal computer. The user approved a Turkish/English interface, local execution, general metal reference prices and configurable data providers. No fixed delivery date was requested.
 
 This document follows the introduction, overall description and specific-requirements structure requested under IEEE 830-1998 in the proposal. It does not claim third-party standards certification.
 
@@ -27,11 +27,11 @@ Users require a desktop browser; responsive layouts also support narrow displays
 | F05 | Display portfolio value, allocation and history | Django templates; locally bundled Plotly | Browser dashboard inspection and populated-page checks |
 | F06 | Compare against S&P 500/NASDAQ 100/Bitcoin | Same-currency normalized benchmark series | Cash-flow return tests and USD browser comparison |
 | F07 | Explain robustness and historical stress behavior | Volatility, drawdown, Sharpe, concentration, correlations and replay | Known-path drawdown test; two visible synthetic stress windows |
-| F08 | Train a lightweight model and evaluate it chronologically | Replaceable sklearn estimator; purged holdout and TimeSeriesSplit | Feature causality test, trained artifacts and model-results report |
-| F09 | Present source-linked news and social sentiment | NewsAPI/X/import adapters and VADER | Provider fixtures, URL validation and labeled sentiment fixture |
+| F08 | Present the archive model’s fund outlooks | Local archive GRU and date-aligned portfolio inputs | Archived portfolio smoke test and engine payload checks |
+| F09 | Present source-linked news and portfolio sentiment | Headline imports and the archive FinTurkBERT summary | Offline fixtures, URL validation and local model smoke test |
 | F10 | Create/edit/delete private planning notes | Owner-scoped Django ModelForms | Isolation and escaping tests; browser create/edit flow |
 
-The original proposal's LSTM reference is treated as an example, consistent with the user's approval to begin with a lightweight model. The default is a small random forest, not a language-model API. The resilience score is explicitly a heuristic rather than a trained crash-probability model.
+GRU and FinTurkBERT are the application’s analysis models. Accounting, resilience and correlation use deterministic portfolio statistics.
 
 ## 4 Nonfunctional requirements
 
@@ -49,7 +49,7 @@ The original proposal's LSTM reference is treated as an example, consistent with
 
 ## 5 Acceptance mapping to the contract
 
-K01: documented setup, migrations and smoke checks. K02: owner isolation tests. K03: Decimal ledger tests. K04: historical conversion tests. K05: import and provider fixtures plus the explicitly documented live verification boundary. K06: value/TWR/benchmark tests and UI. K07: metrics and two stress windows. K08: trained model artifacts and chronological evaluation. K09: source/time/sample transparency and configured-key boundary. K10: notes, responsive screens and error/empty states. K11: source, installation guide, this SRS, validation/model reports and final report.
+K01: documented setup, migrations and smoke checks. K02: owner isolation tests. K03: Decimal ledger tests. K04: historical conversion tests. K05: import and provider fixtures plus the explicitly documented live verification boundary. K06: value/TWR/benchmark tests and UI. K07: metrics and two stress windows. K08: local archive inference and its supplied evaluation artifacts. K09: source/time/sample transparency and configured-key boundary. K10: notes, responsive screens and error/empty states. K11: source, installation guide, this SRS, validation/model reports and final report.
 
 The user's key-deferral decision changes K05/K09 from universal live-provider success to working adapters, explicit sample mode and documented credential-dependent verification. TEFAS remains dependent on public-service availability. No unavailable connection is represented as a successful live integration.
 

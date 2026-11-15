@@ -105,6 +105,8 @@
 .dashboard-balance-facts dd { margin: 5px 0 0; font-size: clamp(17px, 2.2vw, 25px); font-weight: 620; line-height: 1.2; overflow-wrap: anywhere; }
 .dashboard-balance-facts dd span { font-size: 12px; font-weight: 550; white-space: nowrap; }
 .dashboard-balance-facts .dashboard-score-source { color: #c2e2d2; font-size: 11px; font-weight: 500; line-height: 1.4; }
+.dashboard-data-dates { margin: 12px 0 0; font-size: 12px; }
+.dashboard-data-dates .text-link { color: #d3eadf; }
 .dashboard-balance-facts a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
 .dashboard-allocation h2, .dashboard-highlights h2, .dashboard-sections h2 { font-size: clamp(17px, 2vw, 20px); letter-spacing: -.025em; line-height: 1.3; }
 .dashboard-allocation > .bridge-muted { margin-top: 8px; }
@@ -143,9 +145,6 @@
 .dashboard-sections h2 { margin: 2px 0 12px; }
 .dashboard-expert { scroll-margin-top: 5rem; }
 .dashboard-expert h2 { margin: 2px 0 12px; font-size: clamp(17px, 2vw, 20px); letter-spacing: -.025em; }
-.dashboard-expert-link { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 12px; }
-.dashboard-expert-link:hover { background: #f1f7f2; }
-.dashboard-expert-link:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
 .dashboard-start h2, .dashboard-next-step h2 { font-size: clamp(18px, 2.3vw, 23px); letter-spacing: -.025em; }
 .dashboard-start > p, .dashboard-next-step p { color: var(--bridge-muted); margin-top: 6px; font-size: 13px; }
 .dashboard-start > .button { margin-top: 14px; }
@@ -175,11 +174,14 @@
 .dashboard-observation span b { flex: none; }
 .dashboard-observation small { color: var(--bridge-muted); font-size: 12px; }
 .dashboard-score { padding: 12px 15px; }
-.dashboard-score .bridge-total { margin: 6px 0 3px; font-size: 34px; }
+.dashboard-score-heading { display: flex; align-items: baseline; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; }
+.dashboard-score-heading p { margin: 0; }
+.dashboard-score-value { font-size: 21px; font-weight: 680; }
 .dashboard-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
 .dashboard-metrics div { padding: 9px; background: #f2f7f3; border-radius: 7px; min-width: 0; }
 .dashboard-metrics dt { color: var(--bridge-muted); font-size: 12px; line-height: 1.35; }
 .dashboard-metrics dd { margin: 5px 0 0; font-size: 15px; font-weight: 650; overflow-wrap: anywhere; }
+.dashboard-history-metrics { grid-template-columns: repeat(auto-fit, minmax(min(100%, 130px), 1fr)); }
 .dashboard-metrics dd small { font-size: 10px; white-space: nowrap; }
 .dashboard-meter-list, .dashboard-comparison-list, .dashboard-horizons, .dashboard-method-list { list-style: none; margin: 0; padding: 0; }
 .dashboard-meter-list, .dashboard-horizons { display: grid; gap: 8px; }

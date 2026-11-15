@@ -1,4 +1,5 @@
 <p class="dashboard-explainer">{{ t.news_explain }}</p>
+{% if not mock %}<p class="bridge-muted">FinTurkBERT</p>{% endif %}
 {% if news_data.status %}<p class="dashboard-observation"><strong>{{ news_data.status }}</strong></p>{% endif %}
 {% if news_data.counts %}
   <dl class="dashboard-metrics">

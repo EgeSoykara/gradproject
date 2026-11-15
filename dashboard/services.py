@@ -3,17 +3,17 @@ import logging
 import os
 import subprocess
 import sys
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
-import pandas as pd
 from django.conf import settings
 from django.core.cache import cache
 from django.utils.crypto import salted_hmac
 
-from portfolio.services.archive import archive_close, archive_code
+from portfolio.services.analytics import portfolio_risk
+from portfolio.services.archive import archive_code
 from portfolio.services.ledger import replay
-from portfolio.services.valuation import MissingData, portfolio_book, snapshot
+from portfolio.services.valuation import MissingData, history, portfolio_book, snapshot
 
 from .models import DashboardPreferences
 
@@ -37,28 +37,6 @@ def mock_choices():
 def mock_profile_reference(profile):
     with (MOCK_DIR / 'profile_reference.json').open(encoding='utf-8') as source:
         return json.load(source)[profile]
-
-
-def archive_correlation(payload):
-    symbols = list(dict.fromkeys(card.get('symbol') for card in payload.get('fund_cards') or []))
-    if len(symbols) < 2 or any(not isinstance(symbol, str) or not symbol.isascii() or not symbol.isalnum()
-                               for symbol in symbols):
-        return None
-    prices = {}
-    try:
-        as_of = pd.Timestamp((payload.get('portfolio') or {}).get('usd_rate_date') or date.today())
-        for symbol in symbols:
-            prices[symbol] = archive_close(symbol)
-    except (OSError, ImportError, ValueError, TypeError):
-        logger.info('Portfolio correlation price series unavailable')
-        return None
-
-    # Align archived TRY closes before computing returns over the same date intervals.
-    aligned = pd.DataFrame(prices).sort_index().loc[:as_of].dropna().tail(253)
-    returns = aligned.pct_change(fill_method=None).dropna()
-    if len(returns) < 30 or (returns.nunique() < 2).any():
-        return None
-    return returns.corr(), len(returns), aligned.index[0].date(), aligned.index[-1].date()
 
 
 def load_dashboard(user, lang, *, currency=None, profile=None, portfolio=None, fixture=None, snap=None):
@@ -87,7 +65,8 @@ def load_dashboard(user, lang, *, currency=None, profile=None, portfolio=None, f
 
     if not portfolio or portfolio.dataset == 'demo':
         raise DashboardUnavailable('A market portfolio is required.')
-    rows = list(portfolio.transactions.select_related('asset').filter(date__lte=date.today()))
+    asof = snap['asof'] if snap else date.today()
+    rows = list(portfolio.transactions.select_related('asset').filter(date__lte=asof))
     state = snap['state'] if snap else replay(rows)
     assets = {row.asset_id: row.asset for row in rows if row.asset_id}
     market_prices = {holding['asset'].pk: float(holding['price']) for holding in snap['holdings']} if snap else {}
@@ -119,8 +98,8 @@ def load_dashboard(user, lang, *, currency=None, profile=None, portfolio=None, f
     })
 
 
-def workspace_payload(portfolio, currency, profile, lang):
-    book = portfolio_book(portfolio)
+def workspace_payload(portfolio, currency, profile, lang, book=None, *, include_history=False):
+    book = book or portfolio_book(portfolio)
     snap = snapshot(portfolio, currency, book=book)
     total_try = snap['total'] * book.rate(currency, snap['asof'])
     totals = {}
@@ -135,6 +114,8 @@ def workspace_payload(portfolio, currency, profile, lang):
     portfolio_data = {
         **totals, 'base_currency': currency, 'cash_currency': 'TRY',
         'cash_balance': float(snap['state'].cash), 'allocation_by_subcategory': allocation,
+        'valuation_date': snap['asof'].isoformat(), 'dataset': portfolio.dataset,
+        'quotes': [check.public() for check in snap['quotes']],
     }
     engine_payload = None
     if portfolio.archive_prices and portfolio.dataset == 'live' and snap['holdings']:
@@ -147,10 +128,27 @@ def workspace_payload(portfolio, currency, profile, lang):
     payload = dict(engine_payload or {})
     payload['portfolio'] = {**(payload.get('portfolio') or {}), **portfolio_data}
     payload['source'] = 'archive' if portfolio.archive_prices else 'ledger'
+    if snap['holdings'] and (include_history or not portfolio.archive_prices):
+        history_start = snap['asof'] - timedelta(days=365)
+        try:
+            frame = history(portfolio, currency, history_start, snap['asof'], book)
+        except MissingData as exc:
+            payload['historical_risk_error'] = str(exc)
+        else:
+            risk = portfolio_risk(frame, snap)
+            if risk:
+                if portfolio.archive_prices:
+                    for key in ('score', 'components', 'method'):
+                        del risk[key]
+                payload['historical_risk'] = {
+                    **risk, 'start': frame.index[0], 'end': frame.index[-1],
+                }
     return payload, snap, bool(engine_payload)
 
 
 def call_bridge(inputs):
+    if os.getenv('PORTFOLIO_AI_TEST_OFFLINE') == '1':
+        raise AssertionError('Use an analysis fixture instead of starting the engine in tests.')
     backend = settings.PORTFOLIO_AI_HOME
     if not (backend / 'service_bridge.py').is_file():
         raise DashboardUnavailable('The analysis package was not found.')

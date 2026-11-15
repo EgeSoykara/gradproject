@@ -2,6 +2,8 @@
 
 Completed 3 October 2026. Environment: Windows, Python 3.13.5, Django 5.2.17, SQLite. Locked dependencies are recorded in `requirements.txt`.
 
+For the November release checks, see [Release checklist](RELEASE_CHECKLIST.md).
+
 ## Automated verification
 
 **39 tests passed.** Django system checks report no issues. Migration checking reports no pending model changes. Ruff static checks and formatting checks pass.
@@ -44,7 +46,7 @@ On 1 October, the Yahoo historical adapter successfully imported 18 observations
 
 GoldAPI, NewsAPI and X have no supplied keys. Their authenticated adapters are implemented and fixture-tested; live credential verification is deferred as agreed. Metal historical coverage can be supplied through CSV/JSON. The normalized market API needs an actual service implementing the documented schema.
 
-On 3 October, the demo data generator was extended without altering any existing historical price or FX value. A compatibility check compared all observations through 1 October and found **zero differences**. The dataset contains 16,065 synthetic prices and 5,355 synthetic rates through 2 October. Six models were trained, evaluated and saved. The latest per-asset metrics, holdout dates and artifact locations are in `MODEL_RESULTS.md`.
+On 3 October, the demo data generator was extended without altering any existing historical price or FX value. A compatibility check compared all observations through 1 October and found **zero differences**. The dataset contains 16,065 synthetic prices and 5,355 synthetic rates through 2 October. Six models were trained, evaluated and saved. The latest per-asset metrics, holdout dates and artifact locations are in the [prototype archive](archive/MODEL_RESULTS.md).
 
 Only the synthetic money-market fund improved on the zero-return baseline's MAE. The other five models are labeled as having no baseline improvement. This is an expected possible outcome of transparent evaluation; no real-market forecasting accuracy is inferred from synthetic data.
 

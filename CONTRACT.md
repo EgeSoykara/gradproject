@@ -1,5 +1,7 @@
 # PortföyAI geliştirme sözleşmesi
 
+Güncel yapay zekâ kapsamı GRU fon görünümü ve FinTurkBERT haber analizi olarak belirlendi. Geçerli uygulama gereksinimleri [SRS](docs/SRS.md) dosyasında yer alır.
+
 Sürüm: 1.0 — 1 Ekim 2026  
 Durum: Kullanıcı kararları alındı; geliştirme kapsamı kesinleştirildi.
 

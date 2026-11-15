@@ -1,7 +1,9 @@
 {% if r.score is not None %}
   <div class="score-panel dashboard-score">
-    <p class="bridge-kpi-label">{{ robustness_source }}{% if level == 'expert' and r.grade %} · {{ t.grade }} {{ r.grade }}{% endif %}</p>
-    <p class="bridge-total">{{ r.score }} <span>/ 100</span></p>
+    <div class="dashboard-score-heading">
+      <p class="bridge-kpi-label">{{ robustness_source }}{% if level == 'expert' and r.grade %} · {{ t.grade }} {{ r.grade }}{% endif %}</p>
+      <strong class="dashboard-score-value">{% include 'dashboard/_score_percentage.html' with value=r.score %}</strong>
+    </div>
     <meter min="0" max="100" value="{{ r.score|stringformat:'s' }}" aria-label="{{ t.score }}"></meter>
   </div>
   <p class="dashboard-explainer">{{ t.risk_explain }}</p>

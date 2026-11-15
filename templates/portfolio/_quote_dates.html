@@ -1,0 +1,6 @@
+{% load i18n %}
+{% if snap.oldest_quote %}
+  <a class="text-link" href="{% url 'settings' %}?currency={{ snap.currency }}&amp;asof={{ snap.asof|date:'Y-m-d' }}#portfolio-data">
+    {% translate "Data dates" %} · {{ snap.oldest_quote|date:"j M Y" }}{% if snap.latest_quote != snap.oldest_quote %} – {{ snap.latest_quote|date:"j M Y" }}{% endif %} ↗
+  </a>
+{% endif %}

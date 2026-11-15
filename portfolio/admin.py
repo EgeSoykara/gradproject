@@ -3,7 +3,6 @@ from django.contrib import admin
 from .models import (
     Asset,
     ExchangeRate,
-    ModelRun,
     NewsItem,
     Note,
     Portfolio,
@@ -15,7 +14,6 @@ from .models import (
 for model in (
     Asset,
     ExchangeRate,
-    ModelRun,
     NewsItem,
     Note,
     Portfolio,

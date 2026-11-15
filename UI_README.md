@@ -10,7 +10,7 @@ python -m venv .venv
 .\.venv\Scripts\python.exe manage.py runserver 127.0.0.1:8000
 ```
 
-Open http://127.0.0.1:8000/dashboard/ and register or sign in with the example account printed during setup. The dashboard also opens after sign-in. The overview uses the local ledger. In Expert mode, connected portfolios can show correlations from the same archive price series used for the dashboard. Expert tools also links to Model Lab for saved forecasts and holdout results. Model training is optional for this lab.
+Open http://127.0.0.1:8000/dashboard/ and register or sign in with the example account printed during setup. The dashboard also opens after sign-in. The overview uses the local ledger. In Expert mode, connected portfolios can show correlations from the same archive price series used for the dashboard. The archive-connected dashboard presents saved GRU fund outlooks and FinTurkBERT news sentiment. The news card and its summary share the same FinTurkBERT result from the local news cache. The market brief lists source-linked articles and points to the dashboard for analysis.
 
 Use the TR / EN control in the top bar to change the language of the entire interface. The selected language is saved on the signed-in account and also applies to the analysis model's localized content when available.
 

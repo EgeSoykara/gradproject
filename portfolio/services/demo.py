@@ -125,31 +125,6 @@ def seed_market():
         ],
         dataset='demo',
     )
-    posts = [
-        'Strong growth and excellent profits are encouraging.',
-        'Losses and uncertainty worry investors.',
-        'Markets open for trading today.',
-        'The outlook is positive and confidence is improving.',
-        'Terrible losses create fear and panic.',
-        'The quarterly report was published.',
-        'A good recovery brings renewed optimism.',
-        'Risk is high and performance is disappointing.',
-        'The fund holds gold and bonds.',
-        'I love the strong, stable results.',
-    ]
-    import_articles(
-        [
-            {
-                'id': f'demo-social-{i}',
-                'title': t,
-                'source': 'Synthetic social sample',
-                'published_at': (now - timedelta(minutes=i * 15)).isoformat(),
-            }
-            for i, t in enumerate(posts)
-        ],
-        dataset='demo',
-        kind='social',
-    )
     return len(prices), len(rates)
 
 

@@ -1,5 +1,7 @@
 # Model evaluation results
 
+Historical Random Forest prototype results. These commands apply to the matching historical revision. The current application uses GRU and FinTurkBERT.
+
 Generated 2026-10-03 · Dataset: demo
 
 This report records the latest completed training run for each asset. Errors are measured on fractional next-observation returns, not price levels.

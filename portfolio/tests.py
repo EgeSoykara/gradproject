@@ -2,23 +2,22 @@ from datetime import date, timedelta
 from decimal import Decimal as D
 from unittest.mock import patch
 
-import numpy as np
 import pandas as pd
+import requests
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase
 from django.urls import reverse
 
-from .models import Asset, ExchangeRate, Note, Portfolio, Price, Transaction
+from .models import Asset, ExchangeRate, NewsItem, Note, Portfolio, Price, SyncLog, Transaction
 from .services.analytics import risk_metrics
 from .services.ledger import delete_transaction, replay, save_transaction
-from .services.ml import features
 from .services.providers import (
     ProviderError,
     import_articles,
     import_market,
     read_market_csv,
-    sentiment_score,
     sync_provider,
 )
 from .services.valuation import MarketBook, MissingData, history, snapshot
@@ -109,6 +108,11 @@ class PortfolioTests(TestCase):
         result = snapshot(self.portfolio, 'USD', self.day)
         self.assertEqual(result['total'], D('25'))
         self.assertEqual(result['holdings'][0]['value'], D('2.5'))
+        self.assertEqual(result['oldest_quote'], self.day)
+        self.assertEqual(
+            [(check.symbol, check.quote.source) for check in result['quotes']],
+            [('TEST', 'fixture'), ('USD/TRY', 'fixture')],
+        )
 
     def test_fx_trade_records_cash_value(self):
         self.tx()
@@ -142,6 +146,39 @@ class PortfolioTests(TestCase):
     def test_stale_prices_rejected(self):
         with self.assertRaises(MissingData):
             MarketBook('live').price(self.asset.id, self.day + timedelta(days=8))
+
+    def test_all_missing_and_outdated_observations_are_reported(self):
+        self.tx()
+        self.tx('buy', '10', '2')
+        self.client.force_login(self.user)
+        query = {'currency': 'EUR'}
+        response = self.client.get(reverse('dashboard_api'), query)
+        self.assertEqual(response.status_code, 503)
+        issues = response.json()['quote_issues']
+        self.assertEqual([(c['symbol'], c['status']) for c in issues], [
+            ('TEST', 'stale'), ('EUR/TRY', 'missing'),
+        ])
+        self.assertEqual(issues[0]['observed'], self.day.isoformat())
+        self.assertEqual(issues[0]['origin'], 'live')
+        page = self.client.get(reverse('holdings'), query)
+        self.assertContains(page, 'Outdated')
+        self.assertContains(page, 'EUR/TRY')
+        self.assertNotContains(page, 'Market value')
+        settings = self.client.get(reverse('settings'), query)
+        self.assertContains(settings, 'Portfolio data')
+        self.assertContains(settings, 'EUR/TRY')
+
+    def test_history_date_range_uses_previous_holdings_without_earlier_prices(self):
+        self.tx()
+        self.tx('buy', '10', '10')
+        start = self.day + timedelta(days=14)
+        end = start + timedelta(days=1)
+        for day, value in ((start, 18), (end, 20)):
+            Price.objects.create(asset=self.asset, date=day, close=value, dataset='live', source='fixture')
+        frame = history(self.portfolio, start=start, end=end)
+        self.assertEqual(frame['value'].tolist(), [1080, 1100])
+        self.assertEqual(frame['flow'].tolist(), [0, 0])
+        self.assertAlmostEqual(frame['index'].iloc[-1], 1100 / 1080 * 100)
 
     def test_cash_deposit_does_not_create_return(self):
         self.tx()
@@ -198,7 +235,6 @@ class PortfolioTests(TestCase):
             'dashboard',
             'holdings',
             'transactions',
-            'model_lab',
             'notes',
             'news',
             'settings',
@@ -212,7 +248,6 @@ class PortfolioTests(TestCase):
             'dashboard',
             'holdings',
             'transactions',
-            'model_lab',
             'notes',
             'news',
             'settings',
@@ -225,13 +260,13 @@ class PortfolioTests(TestCase):
 
     def test_language_switch_persists_across_pages_and_sessions(self):
         self.client.force_login(self.user)
-        analysis_url = reverse('model_lab')
+        analysis_url = reverse('ai_dashboard')
         response = self.client.post(
             reverse('set_language'),
             {'language': 'tr', 'next': f'{analysis_url}?lang=en&currency=TRY'},
         )
         self.assertRedirects(response, f'{analysis_url}?currency=TRY')
-        self.assertContains(self.client.get(analysis_url), 'Model Laboratuvarı')
+        self.assertContains(self.client.get(analysis_url), 'Portföy paneli')
         self.assertContains(self.client.get(reverse('transactions')), '<h1>İşlemler</h1>', html=True)
         self.assertContains(self.client.get(reverse('transaction_new')), 'İşlem kaydet')
         self.assertContains(self.client.get(reverse('ai_dashboard')), '<html lang="tr">')
@@ -245,11 +280,37 @@ class PortfolioTests(TestCase):
         self.assertRedirects(response, reverse('notes'))
         self.assertContains(self.client.get(reverse('notes')), '<h1>My notes</h1>', html=True)
 
-    def test_analysis_bookmark_redirects_to_model_lab(self):
+    def test_retired_model_lab_bookmarks_go_to_the_portfolio_dashboard(self):
         self.client.force_login(self.user)
-        response = self.client.get(reverse('analysis'), {'currency': 'USD', 'budget': '200'})
-        self.assertRedirects(response, f"{reverse('model_lab')}?currency=USD&budget=200")
-        self.assertNotContains(self.client.get(reverse('dashboard')), f'href="{reverse("model_lab")}"')
+        for name in ('analysis', 'model_lab'):
+            with self.subTest(name=name):
+                response = self.client.get(reverse(name), {'currency': 'USD', 'budget': '200'})
+                self.assertRedirects(response, f"{reverse('ai_dashboard')}?currency=USD&budget=200")
+
+    def test_news_keeps_headlines_and_links_to_archive_analysis(self):
+        self.client.force_login(self.user)
+        import_articles([{
+            'id': 'headline', 'title': 'A raw financial headline',
+            'url': 'https://example.com/report', 'published_at': '2026-01-01T12:00:00Z',
+        }])
+        item = NewsItem.objects.get(external_id='headline')
+        item.sentiment = 0.9
+        item.save(update_fields=['sentiment'])
+        self.portfolio.archive_prices = True
+        self.portfolio.save(update_fields=['archive_prices'])
+        response = self.client.get(reverse('news'))
+        self.assertContains(response, 'A raw financial headline')
+        self.assertContains(response, 'FinTurkBERT')
+        self.assertContains(response, f'{reverse("ai_dashboard")}#dashboard-news')
+        self.assertNotContains(response, 'VADER')
+        self.assertNotContains(response, '0.9')
+
+    @patch.dict('os.environ', {'X_BEARER_TOKEN': 'fixture-must-not-leave-the-process'})
+    def test_x_requests_fail_before_network_access(self):
+        with self.assertRaisesRegex(AssertionError, 'Network access is disabled'):
+            sync_provider('social')
+        with self.assertRaisesRegex(AssertionError, 'Network access is disabled'):
+            requests.get('https://api.x.com/2/tweets/search/recent')
 
     def test_benchmark_form_can_clear_all_comparisons(self):
         self.client.force_login(self.user)
@@ -338,6 +399,34 @@ class PortfolioTests(TestCase):
     def test_shared_market_import_requires_staff(self):
         self.client.force_login(self.user)
         self.assertEqual(self.client.post(reverse('market_import')).status_code, 403)
+
+    def test_staff_upload_shows_result_and_keeps_prices_on_failure(self):
+        self.user.is_staff = True
+        self.user.save(update_fields=['is_staff'])
+        self.client.force_login(self.user)
+        template = self.client.get(reverse('market_import_template'))
+        self.assertEqual(template.content, b'type,symbol,date,value\r\n')
+        url = reverse('market_import')
+        csv_file = SimpleUploadedFile(
+            'prices.csv', b'type,symbol,date,value\nprice,TEST,2026-01-05,25\n'
+        )
+        response = self.client.post(url, {'file': csv_file}, follow=True)
+        self.assertContains(response, 'Imported 1 market observation.')
+        self.assertEqual(Price.objects.get().source, 'CSV import')
+        upload = SimpleUploadedFile('fx.json', b'{"rates":[{"currency":"EUR","date":"2026-01-05","try_per_unit":"46"}]}')
+        self.client.post(url, {'file': upload}, follow=True)
+        self.assertEqual(ExchangeRate.objects.get(currency='EUR').source, 'JSON import')
+        invalid = SimpleUploadedFile('bad.csv', (
+            b'type,symbol,date,value\nprice,TEST,2026-01-05,99\nprice,UNKNOWN,2026-01-05,1\n'
+        ))
+        response = self.client.post(url, {'file': invalid}, follow=True)
+        self.assertContains(response, 'Every price requires a known symbol, date and close.')
+        self.assertContains(response, 'Connection history')
+        self.assertEqual(Price.objects.get().close, D(25))
+        self.assertEqual(
+            list(SyncLog.objects.filter(provider='File import').values_list('status', flat=True)),
+            ['error', 'success', 'success'],
+        )
 
     def test_invalid_date_range_has_no_server_error(self):
         self.client.force_login(self.user)
@@ -487,13 +576,6 @@ class AnalyticsTests(TestCase):
         for currency, values in rates_before.items():
             self.assertEqual(values, rates_after[currency][: len(values)])
 
-    def test_training_command_fails_without_eligible_data(self):
-        from django.core.management import call_command
-        from django.core.management.base import CommandError
-
-        with self.assertRaises(CommandError):
-            call_command('train_models', dataset='live', symbol='MISSING')
-
     def test_drawdown_known_path(self):
         r = pd.Series([0.0] * 30 + [-0.2, 0.125])
         metrics = risk_metrics(r, [0.5, 0.5])
@@ -503,20 +585,3 @@ class AnalyticsTests(TestCase):
 
     def test_insufficient_history(self):
         self.assertIsNone(risk_metrics([0.01] * 10))
-
-    def test_features_have_no_future_leakage(self):
-        prices = pd.Series(np.linspace(100, 200, 100))
-        before = features(prices).iloc[50].copy()
-        prices.iloc[51:] = 999
-        pd.testing.assert_series_equal(before, features(prices).iloc[50])
-
-    def test_sentiment_labeled_fixture(self):
-        fixture = [
-            ('Excellent profits and wonderful growth!', 'positive'),
-            ('Terrible losses and disastrous failure.', 'negative'),
-            ('The report was published on Monday.', 'neutral'),
-        ]
-        for text, expected in fixture:
-            score = sentiment_score(text)
-            label = 'positive' if score >= 0.05 else 'negative' if score <= -0.05 else 'neutral'
-            self.assertEqual(label, expected)

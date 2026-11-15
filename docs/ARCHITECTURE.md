@@ -9,7 +9,7 @@ Services separate responsibilities:
 - `ledger.py`: Decimal weighted-average accounting and atomic full-history validation.
 - `valuation.py`: dated market lookup, FX conversion, holdings and daily value/TWR histories.
 - `analytics.py`: risk, concentration, correlation and hypothetical historical replay.
-- `ml.py`: feature construction, chronological training/evaluation and saved model artifacts.
+- `dashboard/services.py`: hands the active archive portfolio to the local analysis package.
 - `providers.py`: validation, normalized imports, authenticated news/social/metals/API adapters.
 - `public_sources.py`: optional Yahoo and TEFAS historical adapters.
 - `demo.py`: fictional funds, synthetic prices/rates, posts and a personal sample portfolio.
@@ -40,20 +40,16 @@ Benchmarks use the exact same dates and reporting currency. Yahoo series are una
 
 Annual volatility is sample standard deviation × sqrt(252). Sharpe uses mean daily return × 252 divided by annual volatility, with an explicit annual risk-free assumption of zero. Zero volatility yields no Sharpe value. Drawdown uses a cumulative wealth path including its initial level. At least 30 return observations are required.
 
-Resilience v1 is a bounded heuristic with 40% volatility, 40% drawdown and 20% diversification. The first two normalize against 60%; diversification is one minus the sum of squared weights, including cash. It is not calibrated to default, loss or recovery probabilities. Correlations use aligned daily TRY returns for up to 253 price observations per held asset.
+Resilience v1 is a bounded heuristic with 40% volatility, 40% drawdown and 20% diversification. The first two normalize against 60%; diversification is one minus the sum of squared weights, including cash. It is not calibrated to default, loss or recovery probabilities. Correlations use daily returns aligned in the selected reporting currency for up to 253 price observations per held asset.
 
 Stress windows are 19 February–23 March 2020 and 3 January–12 October 2022. Current/selected-date weights are frozen and multiplied by each asset's historical endpoint return in the selected reporting currency; TRY cash's FX return is included. This is hypothetical exposure replay. Synthetic paths reproduce no actual historical market loss and are labeled accordingly.
 
-## Model lifecycle
+## Analysis engine
 
-Features are current/lagged close returns, 5/20-period momentum, 20-period volatility and deviation from a 20-period moving average. The target is the next observation's close return in the asset's quote currency. Missing warm-up values and the unlabeled last return are excluded. At least 180 labeled feature rows (normally 201 prices) are required.
-
-The last 20% forms a holdout. One preceding sample is purged to avoid target-boundary overlap. Three expanding-window training folds with a one-row gap report MAE. The default random forest has 80 trees, depth 5, at least 12 observations per leaf, one worker and seed 42. Evaluation reports MAE, RMSE, direction accuracy, baseline MAE and train/test dates. Final forecasting refits a new estimator on available labeled observations after metrics have been computed.
-
-The illustrative strategy switches between the asset and cash at forecast >0.1%, with 10 bps charged per position change. It assumes execution at the feature day's close and therefore is optimistic; it omits settlement, taxes, market impact and slippage. It is an educational backtest, not executable trading evidence. Candidate ranking subtracts a risk-preference multiple of test RMSE from the forecast. Capacity is independently computed for each candidate using today's cash and price. The date filter controls portfolio risk/history; forecasts always use the latest trained model and current capacity.
+For an archive-connected portfolio, Django passes positions, dated transactions and display preferences to the local engine. The archive's GRU supplies fund outlooks. FinTurkBERT scores eligible news items from the engine's local cache. The dashboard presents those results alongside deterministic portfolio statistics. The market brief displays imported headlines with their sources and timestamps.
 
 ## Security and operating boundary
 
-Django hashes passwords, checks CSRF, escapes HTML, uses ORM queries and HTTP-only session cookies. Personal-object routes filter by authenticated owner. Notes are never transmitted to data providers. Source URLs accept HTTP(S) only; tokens stay in environment variables and request headers. Network failures avoid logging credentials. Generated joblib files are local outputs; there is no upload/load route for untrusted model files.
+Django hashes passwords, checks CSRF, escapes HTML, uses ORM queries and HTTP-only session cookies. Personal-object routes filter by authenticated owner. Notes are never transmitted to data providers. Source URLs accept HTTP(S) only; tokens stay in environment variables and request headers. Network failures avoid logging credentials. The archive engine reads weights from the separately installed package. The bridge clears credentials for paid sources when rendering the dashboard, and tests reject network calls.
 
 ISO/IEC 27001 themes are addressed through access control, asset/provenance tracking, credential separation and backup guidance. This does not constitute certification. The local configuration intentionally uses HTTP on loopback and Django's development server. Public deployment would require a separate security and operations design. The database is not encrypted at rest; local OS account protection and backups remain relevant.

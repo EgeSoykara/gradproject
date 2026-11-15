@@ -15,7 +15,6 @@ from django.db import transaction
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from django.utils.translation import gettext as _
-from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 from portfolio.models import Asset, ExchangeRate, NewsItem, Price, SyncLog
 
@@ -93,9 +92,14 @@ def import_market(payload, dataset='live', source='CSV import'):
 
 
 def read_market_csv(text):
-    reader = csv.DictReader(StringIO(text))
+    reader = csv.DictReader(StringIO(text), strict=True)
+    header = reader.fieldnames or []
+    if len(header) != 4 or set(header) != {'type', 'symbol', 'date', 'value'}:
+        raise ProviderError(_('CSV type must be price or fx. Required columns: type,symbol,date,value.'))
     result = {'prices': [], 'rates': []}
     for row in reader:
+        if None in row or None in row.values():
+            raise ProviderError(_('Each CSV row must contain all four columns.'))
         if row.get('type') == 'price':
             result['prices'].append(
                 {'symbol': row.get('symbol'), 'date': row.get('date'), 'close': row.get('value')}
@@ -128,10 +132,6 @@ def get_json(url, headers=None, params=None):
         raise ProviderError('Provider connection or JSON decoding failed. No data was replaced.')
 
 
-def sentiment_score(text):
-    return SentimentIntensityAnalyzer().polarity_scores(text)['compound']
-
-
 @transaction.atomic
 def import_articles(rows, dataset='live', kind='news'):
     if (
@@ -140,7 +140,6 @@ def import_articles(rows, dataset='live', kind='news'):
         or kind not in ('news', 'social')
     ):
         raise ProviderError('Expected an article array, valid dataset and news/social kind.')
-    analyzer = SentimentIntensityAnalyzer()
     count = 0
     for row in rows:
         if not isinstance(row, dict):
@@ -166,7 +165,6 @@ def import_articles(rows, dataset='live', kind='news'):
                 'published_at': stamp,
                 'source': str(row.get('source', 'Imported dataset'))[:100],
                 'url': url[:1000],
-                'sentiment': analyzer.polarity_scores(title)['compound'],
             },
         )
         count += 1

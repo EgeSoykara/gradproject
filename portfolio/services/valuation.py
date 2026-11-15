@@ -1,4 +1,5 @@
 from bisect import bisect_right
+from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
 
@@ -10,68 +11,130 @@ from portfolio.models import Asset, ExchangeRate, Price
 from .archive import archive_close
 from .ledger import Ledger, replay
 
+MAX_QUOTE_AGE_DAYS = 7
+
+
+@dataclass(frozen=True)
+class Quote:
+    value: Decimal
+    date: date
+    source: str
+
+
+@dataclass(frozen=True)
+class QuoteCheck:
+    symbol: str
+    kind: str
+    asof: date
+    quote: Quote | None
+    origin: str
+
+    @property
+    def age(self):
+        return (self.asof - self.quote.date).days if self.quote else None
+
+    @property
+    def status(self):
+        if self.quote is None:
+            return 'missing'
+        return 'stale' if self.age > MAX_QUOTE_AGE_DAYS else 'ready'
+
+    @property
+    def message(self):
+        if self.status == 'missing':
+            return _('No %(label)s on or before %(day)s.') % {
+                'label': self.symbol,
+                'day': self.asof,
+            }
+        return _('%(label)s last observed on %(observed)s, %(age)s days before %(day)s.') % {
+            'label': self.symbol,
+            'observed': self.quote.date,
+            'age': self.age,
+            'day': self.asof,
+        }
+
+    def public(self):
+        return {
+            'symbol': self.symbol,
+            'kind': self.kind,
+            'asof': self.asof.isoformat(),
+            'origin': self.origin,
+            'status': self.status,
+            'age_days': self.age,
+            'observed': self.quote.date.isoformat() if self.quote else None,
+            'source': self.quote.source if self.quote else None,
+        }
+
 
 class MissingData(ValueError):
-    pass
+    def __init__(self, message, checks=()):
+        super().__init__(message)
+        self.checks = checks
 
 
 class MarketBook:
-    """One dataset per book. Only observations on or before the requested day."""
+    """Load each instrument's series once and look up observations at or before the requested day."""
+
+    uses_archive = False
 
     def __init__(self, dataset):
-        self.prices = {}
-        self.fx = {}
-        self.assets = {a.id: a for a in Asset.objects.all()}
-        for aid, day, close in (
-            Price.objects.filter(dataset=dataset)
-            .values_list('asset_id', 'date', 'close')
-            .order_by('date')
-        ):
-            self.prices.setdefault(aid, []).append((day, close))
-        for currency, day, rate in (
-            ExchangeRate.objects.filter(dataset=dataset)
-            .values_list('currency', 'date', 'try_per_unit')
-            .order_by('date')
-        ):
-            self.fx.setdefault(currency, []).append((day, rate))
-        self.price_days = {key: [v[0] for v in rows] for key, rows in self.prices.items()}
-        self.fx_days = {key: [v[0] for v in rows] for key, rows in self.fx.items()}
+        self.dataset = dataset
+        self.assets = Asset.objects.in_bulk()
+        self._prices = {}
+        self._rates = {}
+
+    def price_series(self, asset_id):
+        if asset_id not in self._prices:
+            rows = Price.objects.filter(dataset=self.dataset, asset_id=asset_id).order_by('date')
+            self._prices[asset_id] = self.indexed(rows.values_list('close', 'date', 'source'))
+        return self._prices[asset_id]
+
+    def rate_series(self, currency):
+        if currency not in self._rates:
+            rows = ExchangeRate.objects.filter(dataset=self.dataset, currency=currency).order_by(
+                'date'
+            )
+            self._rates[currency] = self.indexed(rows.values_list('try_per_unit', 'date', 'source'))
+        return self._rates[currency]
 
     @staticmethod
-    def lookup(rows, days, day, label, strict=True):
-        i = bisect_right(days, day) - 1
-        if i < 0:
-            raise MissingData(
-                _('No %(label)s on or before %(day)s. Import historical data first.')
-                % {'label': label, 'day': day}
-            )
-        observed, value = rows[i]
-        if strict and (day - observed).days > 7:
-            raise MissingData(
-                _('%(label)s is older than 7 days at %(day)s; valuation is unavailable.')
-                % {'label': label, 'day': day}
-            )
-        return value, observed
+    def indexed(rows):
+        quotes = [Quote(value, day, source) for value, day, source in rows]
+        return quotes, [quote.date for quote in quotes]
+
+    @staticmethod
+    def latest(series, day):
+        quotes, dates = series
+        index = bisect_right(dates, day) - 1
+        return quotes[index] if index >= 0 else None
+
+    def check_price(self, asset_id, day):
+        asset = self.assets[asset_id]
+        origin = 'archive' if self.uses_archive and asset.kind != 'benchmark' else self.dataset
+        return QuoteCheck(
+            asset.symbol, 'price', day, self.latest(self.price_series(asset_id), day), origin
+        )
+
+    def check_rate(self, currency, day):
+        origin = 'archive' if self.uses_archive and currency == 'USD' else self.dataset
+        return QuoteCheck(
+            currency + '/TRY', 'fx', day, self.latest(self.rate_series(currency), day), origin
+        )
+
+    @staticmethod
+    def require(check, strict):
+        if check.quote is None or (strict and check.status == 'stale'):
+            raise MissingData(check.message, (check,))
+        return check.quote
 
     def rate(self, currency, day, strict=True):
         if currency == 'TRY':
             return Decimal(1)
-        return self.lookup(
-            self.fx.get(currency, []),
-            self.fx_days.get(currency, []),
-            day,
-            currency + '/TRY',
-            strict,
-        )[0]
+        return self.require(self.check_rate(currency, day), strict).value
 
     def price(self, asset_id, day, strict=True):
-        return self.lookup(
-            self.prices.get(asset_id, []),
-            self.price_days.get(asset_id, []),
-            day,
-            self.assets[asset_id].symbol,
-            strict,
-        )
+        quote = self.require(self.check_price(asset_id, day), strict)
+        return quote.value, quote.date
 
     def asset_try(self, asset_id, day):
         price, _ = self.price(asset_id, day)
@@ -79,35 +142,33 @@ class MarketBook:
 
 
 class ArchiveMarketBook(MarketBook):
+    uses_archive = True
+
     def __init__(self):
         super().__init__('live')
-        self.archive_series = {}
+        self._archive = {}
 
-    def series(self, symbol):
-        if symbol not in self.archive_series:
+    def archive_series(self, symbol):
+        if symbol not in self._archive:
             try:
                 prices = archive_close(symbol)
             except (OSError, ImportError, ValueError, TypeError):
-                self.archive_series[symbol] = ([], [])
+                self._archive[symbol] = ([], [])
             else:
-                self.archive_series[symbol] = (
-                    [(day.date(), Decimal(str(price))) for day, price in prices.items()],
-                    prices.index.date.tolist(),
+                self._archive[symbol] = self.indexed(
+                    (Decimal(str(value)), day.date(), 'PortfolioAI_Ege')
+                    for day, value in prices.items()
                 )
-        return self.archive_series[symbol]
+        return self._archive[symbol]
 
-    def price(self, asset_id, day, strict=True):
+    def price_series(self, asset_id):
         asset = self.assets[asset_id]
         if asset.kind == 'benchmark':
-            return super().price(asset_id, day, strict)
-        rows, days = self.series(asset.symbol) if asset.currency == 'TRY' else ([], [])
-        return self.lookup(rows, days, day, asset.symbol, strict)
+            return super().price_series(asset_id)
+        return self.archive_series(asset.symbol) if asset.currency == 'TRY' else ([], [])
 
-    def rate(self, currency, day, strict=True):
-        if currency == 'USD':
-            rows, days = self.series('USDTRY')
-            return self.lookup(rows, days, day, 'USD/TRY', strict)[0]
-        return super().rate(currency, day, strict)
+    def rate_series(self, currency):
+        return self.archive_series('USDTRY') if currency == 'USD' else super().rate_series(currency)
 
 
 def portfolio_book(portfolio):
@@ -116,17 +177,61 @@ def portfolio_book(portfolio):
     return MarketBook(portfolio.dataset)
 
 
-def snapshot(portfolio, currency='TRY', asof=None, book=None):
-    asof = asof or date.today()
+def portfolio_valuation_date(portfolio, book):
+    today = date.today()
+    if not book.uses_archive:
+        return today
+    archive_rate = book.check_rate('USD', today).quote
+    if archive_rate is None:
+        return today
+    transaction_day = (
+        portfolio.transactions.filter(date__lte=today)
+        .order_by('-date')
+        .values_list('date', flat=True)
+        .first()
+    )
+    return max(archive_rate.date, transaction_day or archive_rate.date)
+
+
+def portfolio_quotes(portfolio, currency='TRY', asof=None, book=None, state=None):
     book = book or portfolio_book(portfolio)
+    asof = asof or portfolio_valuation_date(portfolio, book)
+    if state is None:
+        state = replay(portfolio.transactions.filter(date__lte=asof).select_related('asset'))
+    prices = {
+        aid: book.check_price(aid, asof)
+        for aid, position in state.positions.items()
+        if position.quantity
+    }
+    currencies = {book.assets[aid].currency for aid in prices} | {currency}
+    rates = {code: book.check_rate(code, asof) for code in sorted(currencies - {'TRY'})}
+    return prices, rates
+
+
+def snapshot(portfolio, currency='TRY', asof=None, book=None):
+    book = book or portfolio_book(portfolio)
+    asof = asof or portfolio_valuation_date(portfolio, book)
     state = replay(portfolio.transactions.filter(date__lte=asof).select_related('asset'))
-    fx = book.rate(currency, asof)
+    prices, rates = portfolio_quotes(portfolio, currency, asof, book, state)
+    checks = [*prices.values(), *rates.values()]
+    issues = [check for check in checks if check.status != 'ready']
+    if issues:
+        detail = (
+            issues[0].message
+            if len(issues) == 1
+            else _('Some required prices or exchange rates are unavailable.')
+        )
+        raise MissingData(detail, issues)
+    fx = rates[currency].quote.value if currency in rates else Decimal(1)
     holdings = []
     for aid, p in state.positions.items():
         if p.quantity == 0:
             continue
-        price, observed = book.price(aid, asof)
-        value = p.quantity * price * book.rate(book.assets[aid].currency, asof)
+        quote = prices[aid].quote
+        asset_currency = book.assets[aid].currency
+        asset_rate = rates[asset_currency].quote.value if asset_currency in rates else Decimal(1)
+        price = quote.value
+        value = p.quantity * price * asset_rate
         holdings.append(
             {
                 'asset': book.assets[aid],
@@ -136,7 +241,8 @@ def snapshot(portfolio, currency='TRY', asof=None, book=None):
                 'cost': p.cost / fx,
                 'pnl': (value - p.cost) / fx,
                 'return_pct': float((value / p.cost - 1) * 100) if p.cost else 0,
-                'date': observed,
+                'date': quote.date,
+                'source': quote.source,
             }
         )
     total = state.cash / fx + sum(h['value'] for h in holdings)
@@ -153,6 +259,9 @@ def snapshot(portfolio, currency='TRY', asof=None, book=None):
         'unrealized': sum(h['pnl'] for h in holdings),
         'currency': currency,
         'asof': asof,
+        'quotes': checks,
+        'oldest_quote': min((check.quote.date for check in checks), default=None),
+        'latest_quote': max((check.quote.date for check in checks), default=None),
         'state': state,
     }
 
@@ -163,7 +272,14 @@ def history(portfolio, currency='TRY', start=None, end=None, book=None):
     if not rows:
         return pd.DataFrame(columns=['value', 'flow', 'return', 'index'])
     book = book or portfolio_book(portfolio)
-    days = sorted(set(pd.bdate_range(rows[0].date, end).date) | {r.date for r in rows} | {end})
+    first_day = max(rows[0].date, start) if start else rows[0].date
+    if first_day > end:
+        return pd.DataFrame(columns=['value', 'flow', 'return', 'index'])
+    days = sorted(
+        set(pd.bdate_range(first_day, end).date)
+        | {r.date for r in rows if r.date >= first_day}
+        | {end}
+    )
     state, cursor, previous, growth = Ledger(), 0, None, 1.0
     output = []
     for day in days:
@@ -171,7 +287,7 @@ def history(portfolio, currency='TRY', start=None, end=None, book=None):
         while cursor < len(rows) and rows[cursor].date <= day:
             row = rows[cursor]
             state.apply(row)
-            if row.kind in ('deposit', 'withdraw'):
+            if row.date == day and row.kind in ('deposit', 'withdraw'):
                 flow += row.price * row.fx_to_try * (1 if row.kind == 'deposit' else -1)
             cursor += 1
         fx = book.rate(currency, day)

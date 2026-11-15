@@ -1,7 +1,7 @@
 import csv
+import json
 import os
-from datetime import date
-from decimal import Decimal, InvalidOperation
+from datetime import date, timedelta
 
 import plotly.graph_objects as go
 from django.contrib import messages
@@ -9,9 +9,11 @@ from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.db.models import Count, Max
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils.dateparse import parse_date
 from django.utils.translation import gettext as _
 from django.utils.translation import ngettext
 from django.views.decorators.http import require_POST
@@ -22,7 +24,7 @@ from .forms import NoteForm, PortfolioForm, RangeForm, RegisterForm, Transaction
 from .models import (
     CURRENCIES,
     Asset,
-    ModelRun,
+    ExchangeRate,
     NewsItem,
     Note,
     Portfolio,
@@ -30,11 +32,20 @@ from .models import (
     SyncLog,
     Transaction,
 )
-from .services.analytics import risk_metrics
-from .services.demo import create_demo_portfolio
+from .services.analytics import portfolio_risk
+from .services.demo import create_demo_portfolio, seed_market
 from .services.ledger import delete_transaction, save_transaction
 from .services.providers import ProviderError, import_market, read_market_csv
-from .services.valuation import MissingData, benchmark_history, history, portfolio_book, snapshot
+from .services.valuation import (
+    MAX_QUOTE_AGE_DAYS,
+    MissingData,
+    benchmark_history,
+    history,
+    portfolio_book,
+    portfolio_quotes,
+    portfolio_valuation_date,
+    snapshot,
+)
 
 
 def active(request):
@@ -61,9 +72,9 @@ def selection(request):
             form,
             data.get('currency') or 'TRY',
             data.get('start'),
-            data.get('end') or date.today(),
+            data.get('end'),
         )
-    return form, 'TRY', None, date.today()
+    return form, 'TRY', None, None
 
 
 def valuation_context(request, with_history=True):
@@ -78,19 +89,22 @@ def valuation_context(request, with_history=True):
     try:
         book = portfolio_book(portfolio)
         snap = snapshot(portfolio, currency, end, book)
-        ctx.update(snap=snap, book=book)
-        if with_history:
-            frame = history(portfolio, currency, start, end, book)
-            ctx['history'] = frame
-            ctx['line_chart'] = line_chart(frame, currency)
-            weights = [h['weight'] / 100 for h in snap['holdings']]
-            if snap['total']:
-                weights.append(float(snap['cash'] / snap['total']))
-            ctx['risk'] = risk_metrics(frame['return'].iloc[1:], weights)
-            ctx['period_return'] = float(frame['index'].iloc[-1] - 100) if not frame.empty else 0
-        ctx['allocation_chart'] = allocation_chart(snap)
     except (MissingData, ValidationError) as exc:
         ctx['data_error'] = str(exc)
+        if isinstance(exc, MissingData):
+            ctx['quote_issues'] = exc.checks
+        return ctx
+    ctx.update(snap=snap, book=book, allocation_chart=allocation_chart(snap))
+    if with_history:
+        try:
+            frame = history(portfolio, currency, start, snap['asof'], book)
+        except MissingData as exc:
+            ctx.update(history_error=str(exc), historical_quote_issues=exc.checks)
+        else:
+            ctx['history'] = frame
+            ctx['line_chart'] = line_chart(frame, currency)
+            ctx['risk'] = portfolio_risk(frame, snap)
+            ctx['period_return'] = float(frame['index'].iloc[-1] - 100) if not frame.empty else 0
     return ctx
 
 
@@ -233,103 +247,16 @@ def compare(request):
 
 
 @login_required
-def model_lab(request):
-    ctx = valuation_context(request, with_history=False)
-    ctx['page'] = 'model_lab'
-    ctx['currencies'] = CURRENCIES
-    risk_level = request.GET.get('risk', 'balanced')
-    if risk_level not in ('cautious', 'balanced', 'growth'):
-        risk_level = 'balanced'
-    ctx['risk_level'] = risk_level
-    current_cash = Decimal(0)
-    try:
-        if 'book' in ctx:
-            current_cash = snapshot(ctx['portfolio'], ctx['currency'], book=ctx['book'])['cash']
-    except MissingData:
-        pass
-    try:
-        budget = Decimal(request.GET.get('budget', str(current_cash)))
-        if not budget.is_finite() or budget < 0 or budget > Decimal('1e12'):
-            raise ValueError
-    except (InvalidOperation, ValueError):
-        budget = Decimal(0)
-        ctx['budget_error'] = _('Enter a finite budget between 0 and 1 trillion.')
-    ctx['budget'] = budget
-    candidates, seen = [], set()
-    runs = list(ModelRun.objects.filter(dataset=ctx['portfolio'].dataset).select_related('asset'))
-    ctx['has_model_runs'] = bool(runs)
-    for run in runs:
-        if run.asset_id in seen:
-            continue
-        seen.add(run.asset_id)
-        penalty = {'cautious': 1.5, 'balanced': 0.75, 'growth': 0.25}[risk_level]
-        try:
-            if 'book' not in ctx:
-                continue
-            today = date.today()
-            price = ctx['book'].asset_try(run.asset_id, today) / ctx['book'].rate(
-                ctx['currency'], today
-            )
-            stale = (today - run.data_end).days > 7
-            available = min(budget, current_cash)
-            candidates.append(
-                {
-                    'run': run,
-                    'prediction_pct': run.prediction * 100,
-                    'rank': run.prediction - penalty * run.metrics['rmse'],
-                    'max_units': available / price if price and not stale else 0,
-                    'stale': stale,
-                    'beats_baseline': run.metrics['mae'] < run.metrics['baseline_mae'],
-                }
-            )
-        except MissingData:
-            continue
-    candidates.sort(key=lambda c: c['rank'], reverse=True)
-    ctx['candidates'] = candidates
-    if candidates:
-        run = candidates[0]['run']
-        curve = run.metrics.get('test_curve', [])
-        f = go.Figure()
-        for key, name in [('strategy', _('Model long/cash')), ('baseline', _('Buy and hold'))]:
-            f.add_trace(
-                go.Scatter(x=[r['date'] for r in curve], y=[r[key] for r in curve], name=name)
-            )
-        ctx['backtest_chart'] = chart(f)
-        ctx['featured_model'] = run
-    return render(request, 'portfolio/model_lab.html', ctx)
-
-
-@login_required
 def news(request):
-    p = active(request)
-    dataset = p.dataset if p else 'live'
-    items = NewsItem.objects.filter(dataset=dataset)
-    social = items.filter(kind='social')
-    counts = {
-        _('Positive'): social.filter(sentiment__gte=0.05).count(),
-        _('Neutral'): social.filter(sentiment__gt=-0.05, sentiment__lt=0.05).count(),
-        _('Negative'): social.filter(sentiment__lte=-0.05).count(),
-    }
+    portfolio = active(request)
+    dataset = portfolio.dataset if portfolio else 'live'
     return render(
         request,
         'portfolio/news.html',
         {
             'page': 'news',
-            'articles': items.filter(kind='news')[:30],
-            'posts': social[:12],
-            'sample_count': social.count(),
-            'counts': counts,
-            'latest_post': social.first(),
-            'sentiment_chart': chart(
-                go.Figure(
-                    go.Bar(
-                        x=list(counts),
-                        y=list(counts.values()),
-                        marker_color=['#147d64', '#97a59d', '#bd6353'],
-                    )
-                ),
-                230,
-            ),
+            'articles': NewsItem.objects.filter(dataset=dataset, kind='news')[:30],
+            'archive_analysis': bool(portfolio and portfolio.archive_prices),
         },
     )
 
@@ -378,13 +305,37 @@ def note_delete(request, pk):
 
 @login_required
 def settings_view(request):
+    portfolio = active(request)
+    preferences = request.dashboard_preferences
+    currency = request.GET.get('currency')
+    if currency not in dict(CURRENCIES):
+        currency = preferences.currency if preferences else 'TRY'
+    try:
+        asof = parse_date(request.GET.get('asof', ''))
+    except ValueError:
+        asof = None
+    if asof and asof > date.today():
+        asof = date.today()
+    checks = []
+    if portfolio:
+        book = portfolio_book(portfolio)
+        asof = asof or portfolio_valuation_date(portfolio, book)
+        prices, rates = portfolio_quotes(portfolio, currency, asof, book)
+        checks = [*prices.values(), *rates.values()]
+    else:
+        asof = asof or date.today()
     return render(
         request,
         'portfolio/settings.html',
         {
             'page': 'settings',
-            'logs': SyncLog.objects.all()[:10],
-            'price_count': Price.objects.filter(dataset='live').count(),
+            'logs': SyncLog.objects.all()[:10] if request.user.is_staff else (),
+            'currency': currency,
+            'asof': asof,
+            'currencies': CURRENCIES,
+            'quote_checks': checks,
+            'market_prices': Price.objects.filter(dataset='live').aggregate(count=Count('id'), latest=Max('date')),
+            'market_rates': ExchangeRate.objects.filter(dataset='live').aggregate(count=Count('id'), latest=Max('date')),
             'providers': [
                 {
                     'name': _('GoldAPI · spot metals'),
@@ -414,9 +365,9 @@ def settings_view(request):
 @login_required
 @require_POST
 def demo_load(request):
-    if not Price.objects.filter(dataset='demo').exists():
-        messages.error(request, _('Run python manage.py seed_demo first, then try again.'))
-        return redirect('settings')
+    oldest_allowed = date.today() - timedelta(days=MAX_QUOTE_AGE_DAYS)
+    if not Price.objects.filter(dataset='demo', date__gte=oldest_allowed).exists():
+        seed_market()
     p = create_demo_portfolio(request.user)
     request.session['portfolio_id'] = p.id
     messages.success(
@@ -473,25 +424,45 @@ def portfolio_create(request):
 
 
 @login_required
+def market_import_template(request):
+    if not request.user.is_staff:
+        return HttpResponse(_('Administrator access is required to modify shared market data.'), status=403)
+    response = HttpResponse('type,symbol,date,value\r\n', content_type='text/csv; charset=utf-8')
+    response['Content-Disposition'] = 'attachment; filename="market-data-template.csv"'
+    return response
+
+
+@login_required
 @require_POST
 def market_import(request):
-    # Market quotes are shared across accounts, so only the local administrator can import them.
     if not request.user.is_staff:
         return HttpResponse(
             _('Administrator access is required to modify shared market data.'), status=403
         )
     upload = request.FILES.get('file')
     try:
-        if not upload or upload.size > 5 * 1024 * 1024:
-            raise ProviderError(_('Choose a CSV file smaller than 5 MB.'))
-        text = upload.read().decode('utf-8-sig')
-        count = import_market(read_market_csv(text))
+        if not upload or not 0 < upload.size <= 5 * 1024 * 1024:
+            raise ProviderError(_('Choose a nonempty CSV or JSON file up to 5 MB.'))
+        content = upload.read().decode('utf-8-sig')
+        name = upload.name.lower()
+        if name.endswith('.csv'):
+            rows, source = read_market_csv(content), 'CSV import'
+        elif name.endswith('.json'):
+            rows, source = json.loads(content), 'JSON import'
+        else:
+            raise ProviderError(_('Choose a file ending in .csv or .json.'))
+        count = import_market(rows, source=source)
         message = ngettext(
             'Imported %(count)s market observation.', 'Imported %(count)s market observations.', count
-        )
-        messages.success(request, message % {'count': count})
+        ) % {'count': count}
     except UnicodeDecodeError:
-        messages.error(request, _('The CSV file must use UTF-8 encoding.'))
-    except ProviderError as exc:
-        messages.error(request, str(exc))
-    return redirect('settings')
+        message, status = _('The file must use UTF-8 encoding.'), 'error'
+    except (json.JSONDecodeError, RecursionError):
+        message, status = _('The file contains invalid or excessively nested JSON.'), 'error'
+    except (ProviderError, csv.Error) as exc:
+        message, status = str(exc), 'error'
+    else:
+        status = 'success'
+    SyncLog.objects.create(provider='File import', status=status, message=message[:500])
+    messages.add_message(request, messages.SUCCESS if status == 'success' else messages.ERROR, message)
+    return redirect(reverse('settings') + '#market-import')

@@ -1,0 +1,15 @@
+{% load i18n portfolio_tags %}
+{% if historical_risk %}
+  <p class="bridge-muted">{{ historical_risk.start|date:"j M Y" }} – {{ historical_risk.end|date:"j M Y" }} · {{ currency }}</p>
+  <dl class="dashboard-metrics dashboard-history-metrics">
+    <div><dt>{% translate "Annualized volatility" %}</dt><dd>{{ historical_risk.volatility|floatformat:2 }}%</dd></div>
+    <div><dt>{% translate "Maximum drawdown" %}</dt><dd>{{ historical_risk.drawdown|floatformat:2 }}%</dd></div>
+    <div><dt>{% translate "Sharpe ratio" %}</dt><dd>{{ historical_risk.sharpe|floatformat:2|default:"—" }}</dd></div>
+    <div><dt>{% translate "Daily observations" %}</dt><dd>{{ historical_risk.observations }}</dd></div>
+  </dl>
+  <p class="bridge-muted">{% translate "Drawdown measures the largest decline from a previous peak. Sharpe divides annualized excess return by volatility, using a zero reference rate." %}</p>
+{% elif history_error %}
+  <p class="bridge-muted">{{ history_error }}</p>
+{% else %}
+  <p class="bridge-muted">{% translate "Needs 30 return observations" %}</p>
+{% endif %}

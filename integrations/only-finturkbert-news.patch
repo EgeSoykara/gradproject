@@ -1,0 +1,126 @@
+--- a/analytics/advisor.py
++++ b/analytics/advisor.py
+@@ -72,6 +72,7 @@
+         profile: str = "balanced",
+         base_currency: str = "TRY",
+         cash_balance: Optional[float] = None,
++        market_sentiment: Optional[Dict[str, Any]] = None,
+     ) -> Dict[str, Any]:
+         """Synthesize portfolio state, model basket comparison, and educational water-filling allocations.
+ 
+@@ -104,7 +105,10 @@
+         robustness_current = robustness_engine.compute_robustness_score(parsed_holdings, mpt_metrics, stress_tests)
+ 
+         # Market sentiment
+-        sentiment = sentiment_engine.evaluate_market_sentiment()
++        sentiment = (
++            market_sentiment if market_sentiment is not None
++            else sentiment_engine.evaluate_market_sentiment()
++        )
+ 
+         # Model basket weights (Variant C)
+         from service_bridge import get_recommended_profile_weights
+--- a/service_bridge.py
++++ b/service_bridge.py
+@@ -1548,6 +1548,7 @@
+ 
+     # Comment 5: News theme macro status (authentic news.bridge.portfolio_news)
+     from news.bridge import portfolio_news
++    port_news = {}
+     try:
+         port_news = portfolio_news(clean_holdings)
+         news_status_code = port_news.get("status", "insufficient_data")
+@@ -1626,12 +1627,22 @@
+     # ---------------------------------------------------------
+     # 5. Rebalancing Options (Balance-based Guidance)
+     # ---------------------------------------------------------
++    mm_tr = port_news.get("label_tr", "Yetersiz veri")
++    mm_en = port_news.get("label_en", "Insufficient data")
++    polarity = port_news.get("net_score") if port_news.get("status") == "success" else None
++    news_summary = port_news.get("summary") or {}
++    m_sentiment = {
++        "market_mood": mm_tr if lang_clean == "tr" else mm_en,
++        "overall_polarity": polarity,
++        "summary": news_summary.get(lang_clean) or (mm_tr if lang_clean == "tr" else mm_en),
++    }
+     rebalancing_res = advisor_engine.generate_recommendations(
+         holdings=clean_holdings,
+         cash=cash,
+         monthly_contribution=monthly_contrib,
+         profile=profile_clean,
+         base_currency=base_currency,
++        market_sentiment=m_sentiment,
+     )
+ 
+     rebalancing_section = {
+@@ -1839,7 +1850,6 @@
+     for card in fund_cards:
+         card["texts"] = render_fund_card_texts(card)
+ 
+-    m_sentiment = sentiment_engine.evaluate_market_sentiment()
+     # Read adopted sentiment model performance dynamically
+     sent_r2_path = Path("results/sentiment_round2.json")
+     tested_perf_str = "test_100 Macro-F1: 0.7295 (95% CI: 0.6120–0.8310)"
+@@ -1881,21 +1891,11 @@
+         except Exception:
+             pass
+ 
+-    raw_mm = str(m_sentiment.get("market_mood", "Nötr")).strip().lower()
+-    if raw_mm == "cautious":
+-        mm_tr, mm_en = "Temkinli", "Cautious"
+-    elif raw_mm in ("positive", "pozitif"):
+-        mm_tr, mm_en = "Pozitif", "Positive"
+-    elif raw_mm in ("negative", "negatif"):
+-        mm_tr, mm_en = "Negatif", "Negative"
+-    else:
+-        mm_tr, mm_en = "Nötr", "Neutral"
+-
+     news_section = {
+-        "market_mood": mm_tr if lang_clean == "tr" else mm_en,
++        "market_mood": m_sentiment["market_mood"],
+         "market_mood_tr": mm_tr,
+         "market_mood_en": mm_en,
+-        "overall_polarity": m_sentiment.get("overall_polarity", 0.0),
++        "overall_polarity": polarity,
+         "label": port_news.get("label", "insufficient_data") if "port_news" in locals() and port_news else "insufficient_data",
+         "label_tr": port_news.get("label_tr", "Yetersiz veri") if "port_news" in locals() and port_news else "Yetersiz veri",
+         "label_en": port_news.get("label_en", "Insufficient data") if "port_news" in locals() and port_news else "Insufficient data",
+--- a/texts/templates.py
++++ b/texts/templates.py
+@@ -899,9 +899,9 @@
+         "pozitif": "Positive", "negatif": "Negative",
+     }
+     raw_mood = str(news_data.get("market_mood", "neutral")).strip().lower()
+-    mood_tr = mood_map_tr.get(raw_mood, "Nötr")
+-    mood_en = mood_map_en.get(raw_mood, "Neutral")
+-    polarity = float(news_data.get("overall_polarity", 0.0))
++    mood_tr = news_data.get("market_mood_tr") or mood_map_tr.get(raw_mood, "Nötr")
++    mood_en = news_data.get("market_mood_en") or mood_map_en.get(raw_mood, "Neutral")
++    polarity = news_data.get("overall_polarity")
+ 
+     # Read adopted model performance dynamically
+     sent_r2 = _load_sentiment_metrics()
+@@ -915,17 +915,12 @@
+     else:
+         perf_text_tr = perf_text_en = news_data.get("details", {}).get("tested_performance", "veri yok / not available")
+ 
+-    summary_tr = (
+-        f"Piyasa ve portföy temalarına ilişkin haber akışı genel olarak {mood_tr} bir eğilim taşımaktadır "
+-        f"(Polarite: {polarity:+.2f}). "
+-        f"{REGULAR_REVIEW_NOTE_TR}"
+-    )
+-
+-    summary_en = (
+-        f"News sentiment regarding market and portfolio themes exhibits an overall {mood_en} trend "
+-        f"(Polarity: {polarity:+.2f}). "
+-        f"{REGULAR_REVIEW_NOTE_EN}"
+-    )
++    if polarity is None:
++        summary_tr = "Portföy temaları için haber duygu özeti oluşturacak kadar veri yok."
++        summary_en = "There is insufficient news data for a portfolio sentiment summary."
++    else:
++        summary_tr = f"Portföy temaları için duygu özeti {mood_tr} (net skor {polarity:+.2f})."
++        summary_en = f"Portfolio news sentiment is {mood_en} (net score {polarity:+.2f})."
+ 
+     details_tr = (
+         f"Doğal Dil İşleme (NLP) Duygu Modeli Detayları:\n"

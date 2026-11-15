@@ -1,0 +1,21 @@
+{% load i18n portfolio_tags %}
+<p class="dashboard-explainer">{% translate "Estimates how today's holdings and cash would have moved during each historical period." %}</p>
+<div class="table-scroll">
+  <table>
+    <thead><tr>
+      <th scope="col">{% translate "Scenario" %}</th>
+      <th scope="col">{% translate "Estimated change" %}</th>
+    </tr></thead>
+    <tbody>
+      {% for scenario in stress_scenarios %}
+        <tr>
+          <th scope="row">{{ scenario.name }}<small>{{ scenario.start|date:"j M Y" }} – {{ scenario.end|date:"j M Y" }}</small></th>
+          <td>
+            {% if scenario.error %}— <small>{{ scenario.error }}</small>
+            {% else %}{{ scenario.return_pct|pct }}<small>{{ scenario.impact|money }} {{ currency }}</small>{% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

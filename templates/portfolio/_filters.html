@@ -1,2 +1,8 @@
 {% load i18n %}<form method="get" class="filter-bar"><div class="filter-label">{% translate "VIEW OPTIONS" %}</div><label>{% translate "Currency" %} {{ range_form.currency }}</label><label>{% translate "From" %} {{ range_form.start }}</label><label>{% translate "To" %} {{ range_form.end }}</label><button class="subtle-button">{% translate "Apply filters" %}</button><a class="reset-link" href="{{ request.path }}">{% translate "Reset" %}</a>{% if range_form.errors %}<div class="field-errors">{{ range_form.errors }}</div>{% endif %}</form>
-{% if data_error %}<div class="message error"><strong>{% translate "Valuation unavailable." %}</strong> {{ data_error }} <a href="{% url 'settings' %}">{% translate "Manage data" %}</a></div>{% endif %}
+{% if data_error %}
+  {% translate "Manage data" as manage_data %}
+  <section class="panel">
+    <p class="message error" role="status"><strong>{% translate "Valuation unavailable." %}</strong> {{ data_error }}</p>
+    {% include 'portfolio/_quote_issue_details.html' with checks=quote_issues action=manage_data %}
+  </section>
+{% endif %}

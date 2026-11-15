@@ -1,10 +1,10 @@
 # PortfolioAI
 
-A local Django investment workspace for fund units, gram-based precious metals, cash, portfolio benchmarking and explainable analytics. The interface and technical documentation are in English. The visual direction follows the existing **PortföyAI — Akıllı Portföy Yönetimi** Stitch project, adapted into working Django templates.
+A local Django investment workspace for fund units, gram-based precious metals, cash, portfolio benchmarking and explainable analytics. The interface supports Turkish and English. The visual direction follows the existing **PortföyAI — Akıllı Portföy Yönetimi** Stitch project, adapted into working Django templates.
 
 ## Quick start on Windows
 
-Clone the repository and prepare the virtual environment, SQLite database, synthetic dataset and trained demo models on first use:
+Clone the repository and prepare the virtual environment, SQLite database, synthetic dataset on first use:
 
 ```powershell
 git clone https://github.com/EgeSoykara/gradproject.git
@@ -13,7 +13,7 @@ cd gradproject
 .\start.ps1
 ```
 
-Requires Python 3.13 for the tested configuration. On later runs, use only `.\start.ps1`. Generated local data and model files are not included in the repository.
+Requires Python 3.13 for the tested configuration. On later runs, use only `.\start.ps1`. The startup script applies pending database migrations before starting the local server. The repository includes the demo generator; setup creates the local database and demo data.
 
 If you have the `EgeSpecial.zip` analysis package, install the full dashboard with `.\setup.ps1 -EngineZip "C:\path\to\EgeSpecial.zip"` and start it with `.\start.ps1`. [Engine setup and example portfolio](UI_README.md#bridge-integration).
 
@@ -27,6 +27,7 @@ This account is local, non-admin and intended only for sample data. Alternativel
 If PowerShell script execution is restricted, run the interpreter directly:
 
 ```powershell
+.\.venv\Scripts\python.exe manage.py migrate --noinput
 .\.venv\Scripts\python.exe manage.py runserver 127.0.0.1:8000
 ```
 
@@ -39,7 +40,6 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 .\.venv\Scripts\python.exe manage.py migrate
 .\.venv\Scripts\python.exe manage.py seed_demo --create-account
-.\.venv\Scripts\python.exe manage.py train_models --dataset demo
 .\.venv\Scripts\python.exe manage.py runserver 127.0.0.1:8000
 ```
 
@@ -51,10 +51,10 @@ python -m venv .venv
 - Fund/metal purchases, partial sales, fees, deposits and withdrawals; edit/delete with full-ledger validation and rollback.
 - Weighted average cost, realized/unrealized P&L, TRY cash and TRY/USD/EUR/GBP valuation.
 - Historical value chart, allocation chart and time-weighted return; same-currency S&P 500, NASDAQ 100 and Bitcoin comparisons.
-- Volatility, drawdown, Sharpe, portfolio concentration, correlation and two historical stress windows.
-- A trained random forest, chronological holdout, expanding-window validation, zero-return baseline and a cost-aware illustrative backtest.
-- Budget/risk preference controls for candidate exploration, English news and VADER sentiment, private notes and CSV ledger export.
-- Atomic market CSV/JSON import, TEFAS and Yahoo historical adapters, optional GoldAPI/NewsAPI/X integrations, and a normalized JSON API adapter.
+- A single robustness score per portfolio, data dates and sources, and an Expert view with volatility, drawdown, Sharpe, correlation and historical scenarios when the required history is available.
+- GRU fund outlooks and FinTurkBERT news sentiment in the archive-connected dashboard.
+- Source-linked imported headlines, private notes and CSV ledger export.
+- Atomic market CSV/JSON import with an administrator upload page and a run history, TEFAS and Yahoo historical adapters, optional GoldAPI/NewsAPI/X integrations, and a normalized JSON API adapter.
 
 ## Data modes and current integration status
 
@@ -75,8 +75,6 @@ Copy `.env.example` to `.env`, fill only the services you use and restart the se
 .\.venv\Scripts\python.exe manage.py sync_data news
 .\.venv\Scripts\python.exe manage.py sync_data social
 .\.venv\Scripts\python.exe manage.py import_data path\to\prices.csv
-.\.venv\Scripts\python.exe manage.py train_models --dataset live
-.\.venv\Scripts\python.exe manage.py model_report --dataset live
 ```
 
 These commands run explicitly, outside web requests. Nothing schedules background network access automatically. They can later be invoked by Windows Task Scheduler using this virtual environment and project working directory.
@@ -89,26 +87,37 @@ To register additional assets or use the shared-data upload form:
 
 Open `/admin/` with your own administrator account. Ordinary users cannot alter the shared market-data store through the upload endpoint.
 
-## Tests and model replacement
+## Back up and restore the workspace
+
+Create a new SQLite backup file, with the app running or stopped.
+
+~~~powershell
+.\.venv\Scripts\python.exe manage.py backup_workspace "$env:USERPROFILE\Documents\portfolioai-backup.sqlite3"
+~~~
+
+The backup contains accounts, portfolios, transactions, notes and stored market data. Store it privately and use a new filename each time. To restore, stop the server, move the current database and any SQLite sidecar files to a separate folder, copy the backup into the project as db.sqlite3, then start the server. Keep the previous database until you verify that your portfolios open.
+
+Keep the analysis ZIP and any model weights and provider configuration you use in your own private storage. The database backup covers only the SQLite workspace.
+
+## Tests
 
 ```powershell
 .\.venv\Scripts\python.exe manage.py test
 .\.venv\Scripts\python.exe manage.py check
 .\.venv\Scripts\python.exe -m ruff check .
-.\.venv\Scripts\python.exe -m ruff format --check .
 ```
 
-`ML_MODEL_CLASS` selects a scikit-learn-compatible estimator with `fit` and `predict`. Retrain after changing it. The feature/target interface is in `portfolio/services/ml.py`; models and metric JSON files are generated under `artifacts/models/<dataset>/`. A neural-network model would require an adapter implementing the same interface rather than a change to the portfolio engine.
+The automated tests use provider and analysis fixtures. External requests are blocked during the suite.
 
-Each training run saves uniquely named artifacts, preserving earlier models. `model_report` exports the latest evaluation per asset. The demo generator can extend its dates without changing past prices or exchange rates.
 
 ## Documentation
 
+- [Release checklist](docs/RELEASE_CHECKLIST.md) — completion status and verification steps.
 - [Agreed scope](CONTRACT.md) — original Turkish working agreement, updated with the user's decisions.
 - [Software requirements](docs/SRS.md) — English requirements and acceptance traceability.
 - [Architecture and financial methods](docs/ARCHITECTURE.md).
 - [Data providers](docs/DATA_PROVIDERS.md).
-- [Validation report](docs/TEST_REPORT.md) and [model results](docs/MODEL_RESULTS.md).
+- [Validation report](docs/TEST_REPORT.md) and [archived prototype results](docs/archive/MODEL_RESULTS.md).
 - [Final project report](docs/FINAL_REPORT.md).
 
 ## Boundaries
