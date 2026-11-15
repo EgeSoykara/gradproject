@@ -1,6 +1,6 @@
-{% extends 'base.html' %}
+{% extends 'base.html' %}{% load i18n %}
 {% block content %}
-<div class="page-heading"><div><span class="eyebrow">YOUR WORKSPACE</span><h1>{{ title }}</h1><p>{{ subtitle }}</p></div></div>
+<div class="page-heading"><div><span class="eyebrow">{% translate "YOUR WORKSPACE" %}</span><h1>{{ title }}</h1><p>{{ subtitle }}</p></div></div>
 <section class="panel editor-panel">
   <form method="post" class="editor-form">
     {% csrf_token %}
@@ -8,7 +8,7 @@
       {{ form.non_field_errors }}
       {% for field in form %}
         {% if field.name == 'asset' %}
-          <p id="asset-search" hidden><label for="asset-query">Find a fund or metal</label><input id="asset-query" type="search" autocomplete="off" placeholder="Search by code or name" aria-controls="id_asset"><span class="helptext" role="status"></span></p>
+          <p id="asset-search" hidden><label for="asset-query">{% translate "Find a fund or metal" %}</label><input id="asset-query" type="search" autocomplete="off" placeholder="{% translate "Search by code or name" %}" aria-controls="id_asset"><span class="helptext" role="status"></span></p>
         {% endif %}
         {{ field.errors }}
         <p>{{ field.label_tag }} {{ field }}{% if field.help_text %}<span class="helptext">{{ field.help_text }}</span>{% endif %}</p>
@@ -17,7 +17,7 @@
     {% else %}
       {{ form.as_p }}
     {% endif %}
-    <div class="button-row"><button class="button">Save changes</button><a class="button secondary" href="{% url cancel_url %}">Cancel</a></div>
+    <div class="button-row"><button class="button">{% translate "Save changes" %}</button><a class="button secondary" href="{% url cancel_url %}">{% translate "Cancel" %}</a></div>
   </form>
 </section>
 {% endblock %}

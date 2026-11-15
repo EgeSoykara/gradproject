@@ -1,0 +1,1197 @@
+# Turkish translations for PortfolioAI.
+# Copyright (C) 2026 PortfolioAI
+# This file is distributed under the same license as the PortfolioAI project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PortfolioAI VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2026-11-15 00:00+0000\n"
+"PO-Revision-Date: 2026-11-15 00:00+0000\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: tr\n"
+"Language-Team: tr <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#, python-format
+msgid "%(label)s is older than 7 days at %(day)s; valuation is unavailable."
+msgstr "%(day)s için %(label)s verisi yedi günden eski. Değerleme yapılamadı."
+
+msgid ""
+". Compound score ≥ 0.05 is positive; ≤ −0.05 is negative. This sample does not represent the "
+"entire market."
+msgstr ""
+". Bileşik puanı 0,05 ve üzeri olanlar pozitif, −0,05 ve altı olanlar negatiftir. Sonuçlar bu "
+"örneklemle sınırlıdır."
+
+msgid "/ unit"
+msgstr "/ birim"
+
+msgid "2022 tightening window"
+msgstr "2022 parasal sıkılaşma dönemi"
+
+msgid "A FRESH START"
+msgstr "YENİ PORTFÖY"
+
+msgid "A clearer view of your wealth"
+msgstr "Portföy takibi ve analiz"
+
+msgid "A complete record of what moved, and when."
+msgstr "Tarihe göre işlem kayıtların."
+
+msgid "A learning portfolio, ready to explore."
+msgstr "Demo portföyünü aç"
+
+msgid ""
+"A lexicon baseline can misread irony, financial jargon and context. The bundled labeled fixture "
+"checks the implementation; it does not establish general accuracy on investment discussions."
+msgstr ""
+"Sözlük tabanlı yöntem, ironiyi ve finansal ifadeleri bağlama göre yorumlamakta zorlanabilir. "
+"Paketteki etiketli örnek veriyle uygulamanın hesaplama adımları sınanır."
+
+msgid "A little more clarity. A better-informed next move."
+msgstr "Portföy değerini, varlık dağılımını ve son işlemlerini incele."
+
+msgid "A new portfolio uses market data. Import prices before recording trades."
+msgstr "Yeni portföy piyasa verileriyle çalışır. İşlem kaydetmeden önce fiyatları içe aktar."
+
+msgid "A place to think."
+msgstr "Henüz not yok."
+
+msgid "A reading list and a measured look at the conversation."
+msgstr "Ekonomi haberlerini ve haberlerin duygu durumunu incele."
+
+msgid "A starting point for risk review"
+msgstr "Risk değerlendirmesi"
+
+msgid "AI insights"
+msgstr "Yapay zekâ analizleri"
+
+msgid "Actions"
+msgstr "İşlem seçenekleri"
+
+msgid "Add positions to evaluate historical stress windows."
+msgstr "Tarihsel stres dönemlerini değerlendirmek için varlıklarını kaydet."
+
+msgid "Administrator access is required to modify shared market data."
+msgstr "Ortak piyasa verilerini değiştirmek için yönetici hesabı gerekiyor."
+
+msgid "All positions"
+msgstr "Tüm pozisyonlar"
+
+msgid "Already have an account?"
+msgstr "Zaten hesabın var mı?"
+
+msgid "Amounts and exchange rates must be positive; fees cannot be negative."
+msgstr "Tutarlar ve döviz kurları sıfırdan büyük olmalı. Ücret sıfır veya daha büyük olmalı."
+
+msgid "An educational portfolio management project."
+msgstr "Eğitim amaçlı portföy yönetimi projesi."
+
+msgid "Annualized volatility"
+msgstr "Yıllıklandırılmış oynaklık"
+
+msgid "Apply filters"
+msgstr "Filtreleri uygula"
+
+msgid "Asset"
+msgstr "Varlık"
+
+msgid "Asset allocation"
+msgstr "Varlık dağılımı"
+
+msgid "At least 30 required for a score"
+msgstr "Puan için en az 30 gözlem gerekir"
+
+msgid "At least two holdings with aligned history are needed."
+msgstr "Tarihleri eşleşen en az iki varlık gerekiyor."
+
+msgid "Available cash"
+msgstr "Kullanılabilir nakit"
+
+msgid "Balanced"
+msgstr "Dengeli"
+
+msgid "Baseline"
+msgstr "Referans"
+
+msgid "Behind the sentiment sample"
+msgstr "Duygu analizi örnekleri"
+
+msgid "Benchmark"
+msgstr "Kıyaslama"
+
+msgid "Benchmark your portfolio"
+msgstr "Portföyünü kıyasla"
+
+msgid ""
+"Benchmarks are price-return series unless the imported provider supplies adjusted total-return "
+"data. External cash movements are removed from portfolio returns under an end-of-day flow "
+"convention. Missing prices are carried forward for at most seven calendar days. No future data "
+"is backfilled."
+msgstr ""
+"Düzeltilmiş toplam getiri verisi varsa kıyaslamada bu seri kullanılır. Diğer durumlarda fiyat "
+"getirisi esas alınır. Dış nakit giriş ve çıkışları gün sonu varsayımıyla portföy getirisinden "
+"ayrılır. Eksik tarihler için son fiyat en fazla yedi gün ileri taşınır. Değerlemede ilgili "
+"tarihte bilinen fiyatlar kullanılır."
+
+msgid "Budget ("
+msgstr "Bütçe ("
+
+msgid "Buy"
+msgstr "Alış"
+
+msgid "Buy and hold"
+msgstr "Sabit portföy"
+
+msgid "CONNECTED WHEN YOU'RE READY"
+msgstr "VERİ BAĞLANTILARI"
+
+msgid "CSV columns: type, symbol, date, value. Types: price or fx. Dates: YYYY-MM-DD."
+msgstr "CSV sütunları type, symbol, date, value. Türler price veya fx. Tarih biçimi YYYY-MM-DD."
+
+msgid "CSV file"
+msgstr "CSV dosyası"
+
+msgid "CSV type must be price or fx. Required columns: type,symbol,date,value."
+msgstr "CSV türü price veya fx olmalı. Gerekli sütunlar type, symbol, date, value."
+
+msgid "Cancel"
+msgstr "Vazgeç"
+
+msgid "Candidate"
+msgstr "Aday varlık"
+
+msgid "Capture your first investment question or plan a portfolio review."
+msgstr "İlk takip notunu yaz veya sonraki portföy incelemeni planla."
+
+msgid "Cash"
+msgstr "Nakit"
+
+msgid "Cash balance"
+msgstr "Nakit bakiyesi"
+
+msgid "Cash contributions are excluded from the TWR return."
+msgstr "Zaman ağırlıklı getiri hesabı nakit girişlerini hariç tutar."
+
+msgid "Cash is held in TRY; other currencies convert at the recorded historical rate."
+msgstr "Nakit TRY olarak tutulur. Diğer para birimleri kayıtlı tarihin kuruyla çevrilir."
+
+msgid "Cash is held in TRY; this is its"
+msgstr "Nakit TRY olarak tutulur. Gösterilen tutar"
+
+msgid "Cash movements use quantity 1, no asset and no fee."
+msgstr "Nakit hareketlerinde miktar 1 olur. Varlık ve ücret alanları boş kalır."
+
+msgid "Cautious"
+msgstr "Temkinli"
+
+msgid "Changing the selection switches the active portfolio."
+msgstr "Seçim yapıldığında aktif portföy değişir."
+
+msgid "Choose a CSV file smaller than 5 MB."
+msgstr "5 MB’tan küçük bir CSV dosyası seç."
+
+msgid "Choose a fund or metal for a trade."
+msgstr "İşlem için bir fon veya metal seç."
+
+msgid "Choose today or an earlier date."
+msgstr "Bugünü veya daha erken bir tarihi seç."
+
+msgid "Common starting value: 100"
+msgstr "Ortak başlangıç değeri 100"
+
+msgid "Compare the same period, in the same currency, from the same starting line."
+msgstr "Aynı dönemi ve para birimini ortak bir başlangıç değeriyle karşılaştır."
+
+msgid "Configured · unverified"
+msgstr "Yapılandırıldı · doğrulanmadı"
+
+msgid "Connection history"
+msgstr "Bağlantı geçmişi"
+
+msgid "Correct the date/currency filters below."
+msgstr "Aşağıdaki tarih veya para birimi filtrelerini düzelt."
+
+msgid "Correlation needs aligned historical exchange rates."
+msgstr "Korelasyon için tarihleri eşleşen geçmiş döviz kurları gerekiyor."
+
+msgid ""
+"Cost and realized P&amp;L are maintained in TRY and translated at the selected valuation-date "
+"rate. Metal quotes are general reference prices, not a bank's executable buy/sell quote."
+msgstr ""
+"Maliyet ve gerçekleşmiş kâr veya zarar TRY olarak hesaplanır ve değerleme tarihindeki kurla "
+"çevrilir. Metal fiyatları genel piyasa referansıdır."
+
+msgid "Create a note"
+msgstr "Not oluştur"
+
+msgid "Create a portfolio"
+msgstr "Portföy oluştur"
+
+msgid "Create account · PortfolioAI"
+msgstr "Hesap oluştur · PortfolioAI"
+
+msgid "Create account →"
+msgstr "Hesap oluştur →"
+
+msgid "Create an account"
+msgstr "Hesap oluştur"
+
+msgid "Create your workspace"
+msgstr "Çalışma alanını oluştur"
+
+msgid "Credentials are read from .env, never shown in this interface."
+msgstr "API anahtarları .env dosyasından okunur."
+
+msgid "Currency"
+msgstr "Para birimi"
+
+msgid "DEMONSTRATION WORKSPACE"
+msgstr "DEMO ÇALIŞMA ALANI"
+
+msgid "Daily TRY returns · up to 252 observations"
+msgstr "Günlük TRY getirileri · en fazla 252 gözlem"
+
+msgid "Data & settings"
+msgstr "Veri ve ayarlar"
+
+msgid "Data through"
+msgstr "Son veri tarihi"
+
+msgid "Date"
+msgstr "Tarih"
+
+msgid "Dates must use YYYY-MM-DD."
+msgstr "Tarihler YYYY-MM-DD biçiminde olmalı."
+
+msgid "Delete"
+msgstr "Sil"
+
+msgid "Delete this note permanently?"
+msgstr "Bu not kalıcı olarak silinsin mi?"
+
+msgid "Delete this transaction? Later balances will be checked before deletion."
+msgstr "Bu işlem silinsin mi? Silmeden önce sonraki bakiyeler kontrol edilir."
+
+msgid "Demo data"
+msgstr "Demo verisi"
+
+msgid "Demonstration"
+msgstr "Demo"
+
+msgid "Deposit"
+msgstr "Nakit girişi"
+
+msgid "Dispersion of daily returns"
+msgstr "Günlük getirilerin dağılımı"
+
+msgid "Each candidate independently"
+msgstr "Her varlık için ayrı hesaplanır"
+
+msgid "Edit"
+msgstr "Düzenle"
+
+msgid "Edit note"
+msgstr "Notu düzenle"
+
+msgid "Edit note →"
+msgstr "Notu düzenle →"
+
+msgid "Edit transaction"
+msgstr "İşlemi düzenle"
+
+msgid ""
+"Editing or deleting a transaction recalculates the entire ledger. Changes that leave negative "
+"cash or oversold positions are rejected."
+msgstr ""
+"Bir işlem düzenlendiğinde veya silindiğinde işlem defterinin tamamı yeniden hesaplanır. Nakit "
+"bakiyesini veya varlık miktarını sıfırın altına düşüren değişiklikler reddedilir."
+
+msgid "Enter a TRY amount only for funds priced in TRY."
+msgstr "TRY tutarı yalnızca TRY ile fiyatlanan fonlar için girilebilir."
+
+msgid "Enter a finite budget between 0 and 1 trillion."
+msgstr "0 ile 1 trilyon arasında bir bütçe gir."
+
+msgid "Enter either units or an amount."
+msgstr "Pay adedi veya tutardan birini gir."
+
+msgid "Enter units, grams or a TRY amount."
+msgstr "Adet, gram veya TRY tutarı gir."
+
+msgid "Every position, in one place"
+msgstr "Açık pozisyonlar"
+
+msgid "Every price requires a known symbol, date and close."
+msgstr "Her fiyat kaydı için bilinen bir sembol, tarih ve kapanış fiyatı gerekiyor."
+
+msgid "Every rate requires currency, date and try_per_unit."
+msgstr "Her kur kaydı için para birimi, tarih ve try_per_unit alanı gerekiyor."
+
+msgid "Evidence"
+msgstr "Model değerlendirmesi"
+
+msgid "Expected a JSON object with prices and rates arrays."
+msgstr "prices ve rates dizilerini içeren bir JSON nesnesi gerekiyor."
+
+msgid "Explore demo portfolio →"
+msgstr "Demo portföyünü incele →"
+
+msgid ""
+"Explore historical stress scenarios, correlations and a transparent, lightweight prediction "
+"model."
+msgstr "Tarihsel stres senaryolarını, korelasyonları ve tahmin modelini incele."
+
+msgid "Explore potential allocations"
+msgstr "Olası dağılımları incele"
+
+msgid "Explore →"
+msgstr "İncele →"
+
+msgid "FX:"
+msgstr "Kur"
+
+msgid "Fee"
+msgstr "Ücret"
+
+msgid "Fee (transaction currency)"
+msgstr "Ücret (işlem para birimi)"
+
+msgid "Fictional demo fund symbols cannot contain live quotes."
+msgstr "Demo fon kodlarına gerçek piyasa fiyatı atanamaz."
+
+msgid "Fictional learning headlines"
+msgstr "Demo haber başlıkları"
+
+msgid "Find a fund or metal"
+msgstr "Fon veya metal bul"
+
+msgid "For a fund, enter either units or a TRY amount. A TRY unit price is required with an amount."
+msgstr ""
+"Fon işlemi için pay adedini veya TRY tutarını gir. Tutar giriyorsan birim fiyatı TRY olarak "
+"belirt."
+
+msgid "For deposits and withdrawals, enter the full cash amount."
+msgstr "Nakit giriş ve çıkışlarında toplam nakit tutarını gir."
+
+msgid "From"
+msgstr "Başlangıç"
+
+msgid "Fund"
+msgstr "Fon"
+
+msgid ""
+"Funds, precious metals and cash. One considered view of your portfolio, with the tools to "
+"understand what moves it."
+msgstr ""
+"Fonlarını, kıymetli metallerini ve nakdini izle. Portföyünün değerini hangi varlıkların "
+"etkilediğini incele."
+
+msgid "Future observations are not accepted."
+msgstr "İleri tarihli gözlemler kabul edilmez."
+
+msgid "Future transactions are not supported."
+msgstr "İleri tarihli işlem kaydedilemez."
+
+msgid "GoldAPI · spot metals"
+msgstr "GoldAPI · spot metal fiyatları"
+
+msgid "Grams:"
+msgstr "Gram:"
+
+msgid "Growth"
+msgstr "Büyüme odaklı"
+
+msgid "Growth of 100"
+msgstr "100 üzerinden değer değişimi"
+
+msgid "Heuristic score ·"
+msgstr "Kural tabanlı puan ·"
+
+msgid "Historical market value ·"
+msgstr "Tarihsel piyasa değeri ·"
+
+msgid "Historical replay"
+msgstr "Tarihsel senaryo"
+
+msgid "Historical stress windows"
+msgstr "Tarihsel stres dönemleri"
+
+msgid "Holdout MAE"
+msgstr "Test MAE değeri"
+
+msgid "Holdout:"
+msgstr "Test dönemi"
+
+msgid "How your holdings move together"
+msgstr "Varlıklar birlikte nasıl hareket ediyor?"
+
+msgid "How your portfolio is balanced"
+msgstr "Portföyünün varlıklara dağılımı"
+
+msgid "Hypothetical change:"
+msgstr "Varsayımsal değişim"
+
+msgid "Ideas to revisit. Decisions to remember."
+msgstr "Daha sonra gözden geçirmek istediğin notlar."
+
+msgid "Import historical market data"
+msgstr "Geçmiş piyasa verilerini içe aktar"
+
+#, python-format
+msgid "Imported %(count)s market observation."
+msgid_plural "Imported %(count)s market observations."
+msgstr[0] "%(count)s piyasa kaydı içe aktarıldı."
+
+msgid "Imported economic news"
+msgstr "İçe aktarılan ekonomi haberleri"
+
+msgid "Imported posts"
+msgstr "İçe aktarılan gönderiler"
+
+msgid "Imported posts will appear here with their source and publication time."
+msgstr "İçe aktarılan gönderiler kaynakları ve yayın saatleriyle burada görünür."
+
+msgid ""
+"Imports validate the entire batch before committing. Existing observations with the same symbol,"
+" date and dataset are updated. Use Django admin to register real TEFAS fund symbols before "
+"importing their history. Demo fund symbols cannot be used in a market portfolio."
+msgstr ""
+"İçe aktarma sırasında tüm satırlar kaydedilmeden önce doğrulanır. Sembolü, tarihi ve veri kümesi"
+" aynı olan kayıtlar güncellenir. Geçmiş verileri içe aktarmadan önce gerçek fon kodlarını Django"
+" yönetim panelinde tanımla. Demo fon kodları piyasa portföylerinde kullanılamaz."
+
+#, python-format
+msgid "Insufficient %(symbol)s on %(day)s. Later transactions must remain valid."
+msgstr "%(day)s tarihinde %(symbol)s miktarı yetersiz. Sonraki işlemler de geçerli kalmalı."
+
+#, python-format
+msgid "Insufficient cash on %(day)s. Add a deposit first or adjust subsequent transactions."
+msgstr "%(day)s tarihinde nakit yetersiz. Nakit girişi ekle veya sonraki işlemleri düzelt."
+
+msgid "Keep the reasoning behind your decisions."
+msgstr "Kararlarını ve inceleme notlarını kaydet."
+
+msgid "LOCAL FIRST &nbsp; / &nbsp; ENGLISH WORKSPACE &nbsp; / &nbsp; EXPLAINABLE ANALYTICS"
+msgstr "YEREL ÇALIŞMA ALANI / AÇIKLANABİLİR ANALİZ"
+
+msgid "LOOK BEYOND THE NUMBERS"
+msgstr "RİSK ANALİZİ"
+
+msgid "Language"
+msgstr "Dil"
+
+msgid "Largest peak-to-trough decline"
+msgstr "Zirveden dibe en büyük düşüş"
+
+msgid "Latest model estimates based on current cash; date filters apply to portfolio risk"
+msgstr "Son model tahminleri mevcut nakde göre gösterilir. Tarih filtreleri portföy riskini etkiler."
+
+msgid "Latest post:"
+msgstr "Son gönderi"
+
+msgid "Learning portfolio loaded. All market data and headlines in this workspace are synthetic."
+msgstr "Demo portföyü açıldı. Bu portföy sentetik fiyat ve haber verileri kullanıyor."
+
+msgid "Leave blank to link this note to the whole portfolio."
+msgstr "Notu tüm portföye bağlamak için boş bırak."
+
+msgid "Lightweight model · v1"
+msgstr "Hafif model · v1"
+
+msgid ""
+"Load synthetic funds, gold and silver positions, historical sample prices and a private note. "
+"Your market portfolio remains separate."
+msgstr "Sentetik fon, altın ve gümüş pozisyonları, örnek geçmiş fiyatlar ve bir not yükle."
+
+msgid "Local workspace"
+msgstr "Yerel çalışma alanı"
+
+msgid "Lower MAE than baseline"
+msgstr "Referanstan düşük MAE"
+
+msgid "MAKE YOUR REASONING VISIBLE"
+msgstr "PORTFÖY NOTLARI"
+
+msgid "Main navigation"
+msgstr "Ana menü"
+
+msgid "Make room for clarity."
+msgstr "Varlıklarını tek yerden takip et."
+
+msgid "Manage data"
+msgstr "Verileri yönet"
+
+msgid "Manage sources →"
+msgstr "Kaynakları yönet →"
+
+msgid "Market API"
+msgstr "Piyasa API’si"
+
+msgid "Market brief"
+msgstr "Piyasa özeti"
+
+msgid "Market data"
+msgstr "Piyasa verisi"
+
+msgid "Market value"
+msgstr "Piyasa değeri"
+
+msgid "Market workspace"
+msgstr "Piyasa portföyü"
+
+msgid "Maximum drawdown"
+msgstr "En büyük değer kaybı"
+
+msgid "Memo"
+msgstr "Not"
+
+msgid "Model evaluation"
+msgstr "Model değerlendirmesi"
+
+msgid "Model long/cash"
+msgstr "Model varlık/nakit"
+
+msgid "Model training, evaluation and limitations"
+msgstr "Model eğitimi, değerlendirme ve sınırlar"
+
+msgid "More history needed"
+msgstr "Daha fazla geçmiş veri gerekiyor"
+
+msgid "My holdings"
+msgstr "Varlıklarım"
+
+msgid "My notes"
+msgstr "Notlarım"
+
+msgid "Name"
+msgstr "Ad"
+
+msgid "Needs 30 return observations"
+msgstr "30 getiri gözlemi gerekiyor"
+
+msgid "Negative"
+msgstr "Negatif"
+
+msgid "Neutral"
+msgstr "Nötr"
+
+msgid "New here?"
+msgstr "İlk kez mi geliyorsun?"
+
+msgid "News"
+msgstr "Haber"
+
+msgid "Next-observation estimate"
+msgstr "Sonraki gözlem için tahmin"
+
+#, python-format
+msgid "No %(label)s on or before %(day)s. Import historical data first."
+msgstr "%(day)s tarihinde veya öncesinde %(label)s verisi bulunamadı. Önce geçmiş verileri içe aktar."
+
+msgid "No articles yet. Configure NewsAPI in .env, then run the news sync command."
+msgstr "Henüz haber yok. .env dosyasında NewsAPI’yi yapılandırıp haber eşitlemesini çalıştır."
+
+msgid "No bank credentials. No real trades."
+msgstr "Uygulama yerel işlem kayıtlarıyla çalışır."
+
+msgid "No baseline improvement"
+msgstr "Referans sonuç korunuyor"
+
+msgid "No holdings yet. Record a deposit and your first purchase."
+msgstr "Henüz varlık yok. İlk nakit girişini ve alış işlemini kaydet."
+
+msgid "No matching assets."
+msgstr "Aramayla eşleşen varlık bulunamadı."
+
+msgid "No price or exchange-rate observations were supplied."
+msgstr "Fiyat veya döviz kuru kaydı bulunamadı."
+
+msgid "No social sample. Add an X API token or import a permitted JSON dataset."
+msgstr ""
+"Sosyal medya verisi yok. X API anahtarı ekle ya da paylaşımına izin verilen bir JSON veri kümesi"
+" içe aktar."
+
+msgid "No sync attempts yet. Nothing connects to external providers automatically."
+msgstr "Henüz eşitleme yapılmadı. Harici sağlayıcı bağlantıları elle başlatılır."
+
+msgid "No trained models for this dataset. Run"
+msgstr "Bu veri kümesi için eğitilmiş model yok. En az 201 gözlem içe aktardıktan sonra"
+
+msgid "No transactions yet. Start with a cash deposit."
+msgstr "Henüz işlem yok. İlk nakit girişini kaydet."
+
+msgid "Normalized return ·"
+msgstr "Normalize getiri ·"
+
+msgid "Not configured"
+msgstr "Yapılandırılmadı"
+
+msgid "Note"
+msgstr "Not"
+
+msgid "Note deleted."
+msgstr "Not silindi."
+
+msgid "Note saved."
+msgstr "Not kaydedildi."
+
+msgid "On the reading list"
+msgstr "Okuma listesi"
+
+msgid "Open AI insights →"
+msgstr "Yapay zekâ analizlerini aç →"
+
+msgid "Open learning portfolio →"
+msgstr "Demo portföyünü aç →"
+
+msgid "Optional context for this transaction"
+msgstr "Bu işlem için isteğe bağlı not"
+
+msgid "Out-of-sample model check"
+msgstr "Örneklem dışı model kontrolü"
+
+msgid "Overview"
+msgstr "Genel bakış"
+
+msgid "PERFORMANCE NEEDS CONTEXT"
+msgstr "TARİHSEL PERFORMANS"
+
+msgid "PORTFOLIO RESILIENCE"
+msgstr "PORTFÖY DAYANIKLILIĞI"
+
+msgid "Pandemic window"
+msgstr "Pandemi dönemi"
+
+msgid "Personal account"
+msgstr "Kişisel hesap"
+
+msgid "Perspective changes everything."
+msgstr "Portföy değerini zaman içinde izle."
+
+msgid "Portfolio"
+msgstr "Portföy"
+
+msgid "Portfolio dashboard"
+msgstr "Portföy paneli"
+
+msgid "Portfolio overview"
+msgstr "Portföy özeti"
+
+msgid "Portfolio performance"
+msgstr "Portföy performansı"
+
+msgid "Portfolio resilience"
+msgstr "Portföy dayanıklılığı"
+
+msgid "PortfolioAI · Investment workspace"
+msgstr "PortfolioAI · Portföy çalışma alanı"
+
+msgid "Positive"
+msgstr "Pozitif"
+
+msgid "Precious metal"
+msgstr "Kıymetli metal"
+
+msgid "Price date"
+msgstr "Fiyat tarihi"
+
+msgid "Prices and rates must be JSON arrays."
+msgstr "Fiyat ve kur verileri JSON dizisi olmalı."
+
+msgid "Prices/rates must be finite numbers from 0.00000001 to below 1e12."
+msgstr "Fiyatlar ve kurlar 0,00000001 ile 1 trilyon arasında olmalı."
+
+msgid "Private by design"
+msgstr "Yerel veriler"
+
+msgid "Provider"
+msgstr "Sağlayıcı"
+
+msgid "Quantity"
+msgstr "Miktar"
+
+msgid "RESEARCH & PLANNING"
+msgstr "ARAŞTIRMA VE PLANLAMA"
+
+msgid ""
+"Ranking = predicted return minus a risk-preference multiple of holdout RMSE. Capacity is "
+"min(budget, available cash) / latest price, before fees; quantities are alternatives, not a "
+"combined allocation. A positive forecast is not a recommendation to trade."
+msgstr ""
+"Sıralama, tahmin edilen getiriden risk tercihine göre ağırlıklandırılan test RMSE değerini "
+"çıkarır. Kapasite, bütçe ile kullanılabilir nakitten düşük olanının son fiyata bölümüyle "
+"hesaplanır. Ücretler hariçtir ve miktarlar her varlık için ayrı ayrı gösterilir. Tahminler "
+"yatırım değerlendirmesi içindir."
+
+msgid "Rate currency must be USD, EUR or GBP; TRY is always 1."
+msgstr "Kur USD, EUR veya GBP için girilebilir. TRY kuru her zaman 1’dir."
+
+msgid "Read with context"
+msgstr "Yöntemin sınırları"
+
+msgid "Realized profit / loss"
+msgstr "Gerçekleşmiş kâr / zarar"
+
+msgid "Recent activity"
+msgstr "Son işlemler"
+
+msgid ""
+"Record a deposit and your holdings, or explore a complete learning portfolio with clearly "
+"labeled sample data."
+msgstr "İlk nakit girişini ve varlıklarını kaydet ya da örnek verilerle demo portföyünü incele."
+
+msgid "Record a transaction"
+msgstr "İşlem kaydet"
+
+msgid "Record cash deposits before entering fund or metal transactions."
+msgstr "Fon veya metal işlemlerinden önce nakit girişini kaydet."
+
+msgid "Record transactions and import historical prices to see a comparison."
+msgstr "Kıyaslamayı görmek için işlem kaydet ve geçmiş fiyatları içe aktar."
+
+msgid "Record your first deposit"
+msgstr "İlk nakit girişini kaydet"
+
+msgid "Record your reasoning, questions and next review date…"
+msgstr "Gerekçelerini, sorularını ve sonraki inceleme tarihini kaydet…"
+
+msgid "Reset"
+msgstr "Sıfırla"
+
+msgid "Resilience, risk and historical scenarios"
+msgstr "Dayanıklılık, risk ve tarihsel senaryolar"
+
+msgid "Result"
+msgstr "Sonuç"
+
+msgid "Return observations"
+msgstr "Getiri gözlemi"
+
+msgid "Risk preference"
+msgstr "Risk tercihi"
+
+msgid "Risk-free assumption: 0% per year"
+msgstr "Yıllık risksiz getiri varsayımı %0"
+
+msgid "Run"
+msgstr "Çalıştır"
+
+msgid "Run python manage.py seed_demo first, then try again."
+msgstr "Önce python manage.py seed_demo komutunu çalıştırıp tekrar dene."
+
+msgid "START WITH A CLEARER VIEW"
+msgstr "KAYIT"
+
+msgid "Save changes"
+msgstr "Değişiklikleri kaydet"
+
+msgid ""
+"Score v1 = 100 × [0.4 × max(0, 1 − annualized volatility / 0.60) + 0.4 × max(0, 1 − |maximum "
+"drawdown| / 0.60) + 0.2 × (1 − sum of squared portfolio weights))]. Cash is included in "
+"concentration. Returns use 252 periods per year and a 0% risk-free rate. This score is heuristic"
+" and has not been calibrated to a probability of loss."
+msgstr ""
+"Puan v1 = 100 × [0,4 × maks(0, 1 − yıllık oynaklık / 0,60) + 0,4 × maks(0, 1 − |en büyük düşüş| "
+"/ 0,60) + 0,2 × (1 − portföy ağırlıklarının kareleri toplamı)]. Nakit yoğunlaşmaya dahildir. "
+"Getiriler yıllık 252 dönem ve %0 risksiz faiz üzerinden hesaplanır. Puan kural tabanlıdır."
+
+msgid "Search by code or name"
+msgstr "Kod veya adla ara"
+
+msgid "See the methodology ↓"
+msgstr "Hesaplama yöntemini gör ↓"
+
+msgid "See the whole picture."
+msgstr "Portföyüne genel bakış."
+
+msgid "Select a fund or metal."
+msgstr "Bir fon veya metal seç."
+
+msgid "Selected period return"
+msgstr "Seçili dönemin getirisi"
+
+msgid "Sell"
+msgstr "Satış"
+
+msgid ""
+"Shared market-data imports require a local administrator. Use the command line or create an "
+"admin with"
+msgstr ""
+"Ortak piyasa verilerini içe aktarmak için yerel yönetici hesabı gerekir. Komut satırını kullan "
+"veya şu komutla bir yönetici oluştur:"
+
+msgid "Sharpe ratio"
+msgstr "Sharpe oranı"
+
+msgid "Sign in"
+msgstr "Giriş yap"
+
+msgid "Sign in to your private, local workspace."
+msgstr "Kişisel çalışma alanını açmak için giriş yap."
+
+msgid "Sign in · PortfolioAI"
+msgstr "Giriş yap · PortfolioAI"
+
+msgid "Sign out"
+msgstr "Çıkış yap"
+
+msgid "Social"
+msgstr "Sosyal medya"
+
+msgid "Social sentiment"
+msgstr "Sosyal medya duygu analizi"
+
+msgid "Source ↗"
+msgstr "Kaynak ↗"
+
+msgid "Stale model"
+msgstr "Model verisi güncel değil"
+
+msgid "Standalone capacity"
+msgstr "Tek varlık için kapasite"
+
+msgid "Start locally. Add your own data sources as you go."
+msgstr "Veri kaynaklarını ve portföylerini yönet."
+
+msgid "Status"
+msgstr "Durum"
+
+msgid ""
+"Stress tests freeze today's asset weights and replay the endpoints of a historical window. They "
+"are hypothetical exposure analyses, not the actual historical performance of your account. Demo "
+"paths are synthetic and do not reproduce actual crash returns."
+msgstr ""
+"Stres testleri güncel varlık ağırlıklarını sabit tutar ve geçmiş bir dönemin başlangıç ile bitiş"
+" değerlerini uygular. Çıktı, seçili portföy için varsayımsal bir etkiyi gösterir. Demo "
+"senaryoları sentetik veriler üzerinden hesaplanır."
+
+msgid "Switch"
+msgstr "Değiştir"
+
+msgid "Synthetic data validates the pipeline, not market performance."
+msgstr "Sentetik veriler hesaplama akışını sınamak için kullanılır."
+
+msgid "Synthetic posts"
+msgstr "Sentetik gönderiler"
+
+msgid "Synthetic prices, forecasts and headlines. No live market data."
+msgstr "Fiyatlar, tahminler ve başlıklar sentetik demo verilerinden gelir."
+
+msgid "Synthetic scenario paths"
+msgstr "Sentetik senaryolar"
+
+msgid "TEFAS fund"
+msgstr "TEFAS fonu"
+
+msgid "THE BUILDING BLOCKS"
+msgstr "PORTFÖY VARLIKLARI"
+
+msgid "THE WORLD AROUND YOUR PORTFOLIO"
+msgstr "PİYASA VE HABERLER"
+
+msgid "TRY THE COMPLETE WORKFLOW"
+msgstr "DEMO PORTFÖYÜ"
+
+msgid "The CSV file must use UTF-8 encoding."
+msgstr "CSV dosyasının kodlaması UTF-8 olmalı."
+
+msgid "The chart could not be loaded. Refresh the page to try again."
+msgstr "Grafik yüklenemedi. Tekrar denemek için sayfayı yenile."
+
+msgid ""
+"The default random forest uses lagged returns, 5/20-period momentum, a 20-period moving-average "
+"gap and volatility to predict the next observation's return. The final 20% of data is held out, "
+"with a one-observation purge. Three expanding-window splits evaluate training stability. A zero-"
+"return forecast is the baseline. A separate estimator is then refit on available labeled "
+"observations."
+msgstr ""
+"Varsayılan Random Forest modeli, sonraki gözlemin getirisini tahmin etmek için gecikmeli "
+"getirileri, 5 ve 20 dönemlik momentumu, 20 dönemlik hareketli ortalamaya uzaklığı ve oynaklığı "
+"kullanır. Son %20 test için ayrılır ve sınırda bir gözlem atlanır. Eğitim kararlılığı üç "
+"genişleyen pencereyle sınanır. Referans tahmin sıfır getiridir. Son model mevcut etiketli "
+"gözlemlerle yeniden eğitilir."
+
+msgid ""
+"The model strategy holds the asset when the forecast exceeds 0.1%, otherwise cash, charging 0.1%"
+" per position change. Backtests omit slippage, taxes and settlement constraints. Same-close "
+"execution is an optimistic simplifying assumption. Forecasts have no calibrated confidence "
+"interval. The estimator can be replaced through ML_MODEL_CLASS."
+msgstr ""
+"Geriye dönük testte model tahmini %0,1’i aştığında varlık, diğer durumlarda nakit tutulur. Her "
+"pozisyon değişimine %0,1 maliyet yazılır. Testte kayma, vergi ve takas kısıtları hesaba "
+"katılmaz. İşlemlerin kapanış fiyatında gerçekleştiği varsayılır. Tahminler için kalibre edilmiş "
+"güven aralığı yoktur. Model, ML_MODEL_CLASS ayarıyla değiştirilebilir."
+
+msgid "The resulting number of units is too large."
+msgstr "Hesaplanan pay adedi çok büyük."
+
+msgid ""
+"The score combines observed volatility, drawdown and concentration. It is a documented "
+"heuristic, not a learned probability of safety."
+msgstr ""
+"Puan, gözlenen oynaklık, değer kaybı ve yoğunlaşmayı bir araya getirir. Hesaplama kuralı yöntem "
+"bölümünde açıklanır."
+
+msgid "The start date must be before the end date."
+msgstr "Başlangıç tarihi bitiş tarihinden önce olmalı."
+
+msgid ""
+"This application does not provide investment advice; the assessments shown are based on "
+"historical data."
+msgstr "Bu uygulama yatırım tavsiyesi vermez. Gösterilen değerlendirmeler geçmiş verilere dayanır."
+
+msgid "Time"
+msgstr "Zaman"
+
+msgid "Title"
+msgstr "Başlık"
+
+msgid "To"
+msgstr "Bitiş"
+
+msgid "Today's allocation, hypothetically exposed to a past period"
+msgstr "Bugünkü varlık dağılımının geçmiş bir dönemdeki varsayımsal değişimi"
+
+msgid "Toggle navigation"
+msgstr "Gezinme menüsünü aç veya kapat"
+
+msgid "Total amount (TRY)"
+msgstr "Toplam tutar (TRY)"
+
+msgid "Total portfolio value"
+msgstr "Toplam portföy değeri"
+
+msgid "Total profit / loss"
+msgstr "Toplam kâr / zarar"
+
+msgid "Train a model to inspect its holdout results."
+msgstr "Test sonuçlarını incelemek için bir model eğit."
+
+msgid "Transaction deleted and balances recalculated."
+msgstr "İşlem silindi. Bakiyeler yeniden hesaplandı."
+
+msgid "Transaction saved. Portfolio balances have been recalculated."
+msgstr "İşlem kaydedildi. Portföy bakiyeleri yeniden hesaplandı."
+
+msgid "Transaction type"
+msgstr "Alış / Satış"
+
+msgid "Transactions"
+msgstr "İşlemler"
+
+msgid "Transparent models. Measurable risk. More informed questions."
+msgstr "Portföy riskini, tarihsel senaryoları ve model tahminlerini incele."
+
+msgid "Type / asset"
+msgstr "Tür / varlık"
+
+msgid "UNDERSTAND BEFORE YOU ACT"
+msgstr "RİSK VE PERFORMANS"
+
+msgid "Understand the risk behind your returns."
+msgstr "Getirinin arkasındaki riski incele."
+
+msgid "Unit price / amount"
+msgstr "Birim fiyat / tutar"
+
+msgid "Unit price / cash amount"
+msgstr "Birim fiyat / nakit tutarı"
+
+msgid "Units / grams"
+msgstr "Adet / gram"
+
+msgid "Units:"
+msgstr "Adet:"
+
+msgid "Unknown dataset."
+msgstr "Bilinmeyen veri kümesi."
+
+msgid "Unknown transaction type."
+msgstr "Bilinmeyen işlem türü."
+
+msgid "Unrealized P&amp;L"
+msgstr "Gerçekleşmemiş kâr / zarar"
+
+msgid "Unrealized profit / loss"
+msgstr "Gerçekleşmemiş kâr / zarar"
+
+msgid "Update candidates"
+msgstr "Adayları güncelle"
+
+msgid "Update comparison"
+msgstr "Kıyaslamayı güncelle"
+
+msgid "VIEW OPTIONS"
+msgstr "GÖRÜNÜM SEÇENEKLERİ"
+
+msgid "Validate & import"
+msgstr "Doğrula ve içe aktar"
+
+msgid "Valuation unavailable."
+msgstr "Değerleme yapılamadı."
+
+#, python-format
+msgid "Value (%(currency)s)"
+msgstr "Değer (%(currency)s)"
+
+msgid "Valued as of"
+msgstr "Değerleme tarihi"
+
+msgid "View all holdings →"
+msgstr "Tüm varlıkları gör →"
+
+msgid "View ledger →"
+msgstr "İşlem defterini aç →"
+
+msgid "WELCOME BACK"
+msgstr "TEKRAR HOŞ GELDİN"
+
+msgid "WORKSPACE"
+msgstr "ÇALIŞMA ALANI"
+
+msgid "Weight"
+msgstr "Ağırlık"
+
+msgid "Weighted average cost · general reference metal prices"
+msgstr "Ağırlıklı ortalama maliyet · metaller için referans fiyatlar"
+
+msgid "What sits behind these numbers"
+msgstr "Hesaplama yöntemleri"
+
+msgid "Withdrawal"
+msgstr "Nakit çıkışı"
+
+msgid "Workspace"
+msgstr "Çalışma alanı"
+
+msgid "Write a note →"
+msgstr "Not yaz →"
+
+msgid "YOUR INVESTMENT WORKSPACE"
+msgstr "PORTFÖY ÇALIŞMA ALANIN"
+
+msgid "YOUR SOURCE OF TRUTH"
+msgstr "İŞLEM DEFTERİ"
+
+msgid "YOUR WEALTH, IN PERSPECTIVE"
+msgstr "PORTFÖYÜNE GENEL BAKIŞ"
+
+msgid "YOUR WORKSPACE"
+msgstr "ÇALIŞMA ALANIN"
+
+msgid "Your account stays on this computer. Explore a sample portfolio after signing up."
+msgstr "Hesabın bu bilgisayarda saklanır. Kaydolduktan sonra bir örnek portföyü inceleyebilirsin."
+
+msgid "Your data connections"
+msgstr "Veri bağlantıların"
+
+msgid "Your funds and precious metals, brought together."
+msgstr "Fon ve kıymetli metal pozisyonların."
+
+msgid "Your holdings"
+msgstr "Varlıkların"
+
+msgid "Your portfolio"
+msgstr "Portföyün"
+
+msgid "Your portfolio awaits."
+msgstr "Portföyüne giriş yap"
+
+msgid "Your portfolio starts here."
+msgstr "Portföyünü oluşturmaya başla."
+
+msgid ""
+"after configuring the relevant source. Market API expects the documented normalized JSON schema;"
+" it is not a direct TEFAS endpoint. Yahoo and TEFAS historical adapters use the fetch_history "
+"command. Full instructions are in docs/DATA_PROVIDERS.md."
+msgstr ""
+"komutunu ilgili kaynağı yapılandırdıktan sonra çalıştır. Piyasa API’si belgelenmiş JSON şemasını"
+" kullanır. Yahoo ve TEFAS geçmiş verileri için fetch_history komutu kullanılır. Ayrıntılar "
+"docs/DATA_PROVIDERS.md dosyasında."
+
+msgid "after importing at least 201 observations."
+msgstr "komutunu çalıştır."
+
+msgid "coins"
+msgstr "adet"
+
+msgid "equivalent."
+msgstr "karşılığıdır."
+
+msgid "error"
+msgstr "Hata"
+
+msgid "grams"
+msgstr "gram"
+
+msgid "holdings"
+msgstr "varlık"
+
+msgid "index"
+msgstr "endeks"
+
+msgid "observations. Direction accuracy"
+msgstr "gözlem. Yön doğruluğu"
+
+msgid "once to prepare the dataset. Loading your learning portfolio again preserves your edits."
+msgstr ""
+"komutunu bir kez çalıştırarak veri kümesini hazırla. Daha önce yaptığın değişiklikler yeniden "
+"yüklemede korunur."
+
+msgid "or"
+msgstr "veya"
+
+msgid "posts · VADER English lexicon"
+msgstr "gönderi · VADER İngilizce sözlüğü"
+
+msgid "quote return"
+msgstr "fiyat getirisi"
+
+msgid "real-market price observations stored. Demo records are kept in a separate dataset."
+msgstr "piyasa fiyatı kaydı var. Demo kayıtları kendi veri kümesinde tutulur."
+
+msgid "success"
+msgstr "Başarılı"
+
+msgid "to"
+msgstr "–"
+
+msgid "units"
+msgstr "adet"
+
+msgid "· 10 bps per position change"
+msgstr "· pozisyon değişimi başına 10 baz puan"
+
+msgid "· closed positions"
+msgstr "· kapatılmış pozisyonlar"
+
+msgid "· net of recorded fees"
+msgstr "· kayıtlı ücretler düşüldükten sonra"
+
+msgid "· open positions"
+msgstr "· açık pozisyonlar"
+
+msgid "· portfolio uses time-weighted return"
+msgstr "· portföy için zaman ağırlıklı getiri"
+
+msgid "· ready to allocate"
+msgstr "· dağıtılabilir"
+
+msgid "↓ Export CSV"
+msgstr "↓ CSV olarak indir"
+
+msgid "＋ Add transaction"
+msgstr "＋ İşlem ekle"
+
+msgid "＋ New note"
+msgstr "＋ Yeni not"
+
+msgid "＋ New portfolio"
+msgstr "＋ Yeni portföy"

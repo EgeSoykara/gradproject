@@ -1,6 +1,7 @@
 import json
 
 import plotly.graph_objects as go
+from django.utils.translation import gettext as _
 
 COLORS = ['#147d64', '#67ba98', '#2d5263', '#d4ab59', '#869ab0', '#bcd9c9']
 
@@ -30,7 +31,7 @@ def line_chart(frame, currency):
                 x=[str(d) for d in frame.index],
                 y=frame.value.tolist(),
                 mode='lines',
-                name=f'Value ({currency})',
+                name=_('Value (%(currency)s)') % {'currency': currency},
                 line=dict(color=COLORS[0], width=2.5),
                 fill='tozeroy',
                 fillcolor='rgba(20,125,100,.07)',
@@ -40,7 +41,7 @@ def line_chart(frame, currency):
 
 
 def allocation_chart(snap):
-    names = [h['asset'].name for h in snap['holdings']] + ['Cash']
+    names = [h['asset'].name for h in snap['holdings']] + [_('Cash')]
     values = [float(h['value']) for h in snap['holdings']] + [float(snap['cash'])]
     f = go.Figure(
         go.Pie(
@@ -57,7 +58,7 @@ def allocation_chart(snap):
         showlegend=False,
         annotations=[
             dict(
-                text=f'<b>{len(snap["holdings"])}</b><br>holdings',
+                text=f'<b>{len(snap["holdings"])}</b><br>{_("holdings")}',
                 x=0.5,
                 y=0.5,
                 showarrow=False,

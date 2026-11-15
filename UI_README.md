@@ -12,6 +12,8 @@ python -m venv .venv
 
 Open http://127.0.0.1:8000/dashboard/ and register or sign in with the example account printed during setup. The new dashboard also opens after sign-in. The existing overview continues to use the local ledger. Model training is optional for the existing AI Insights lab and is unnecessary for this dashboard.
 
+Use the TR / EN control in the top bar to change the language of the entire interface. The selected language is saved on the signed-in account and also applies to the analysis model's localized content when available.
+
 ## Data sources
 
 The authenticated page and `GET /api/dashboard/?lang=tr&currency=TRY&profile=balanced` use the same adapter. `USE_MOCK_DASHBOARD=true` is the default. The API returns the example as supplied. The page formats the selected currency from the values in the file and selects localized text where available. When a file contains a single text version it displays that text verbatim. The language and profile controls do not regenerate offline results.

@@ -3,6 +3,7 @@ from datetime import date
 from decimal import Decimal
 
 import pandas as pd
+from django.utils.translation import gettext as _
 
 from portfolio.models import Asset, ExchangeRate, Price
 
@@ -39,10 +40,16 @@ class MarketBook:
     def lookup(rows, days, day, label, strict=True):
         i = bisect_right(days, day) - 1
         if i < 0:
-            raise MissingData(f'No {label} on or before {day}. Import historical data first.')
+            raise MissingData(
+                _('No %(label)s on or before %(day)s. Import historical data first.')
+                % {'label': label, 'day': day}
+            )
         observed, value = rows[i]
         if strict and (day - observed).days > 7:
-            raise MissingData(f'{label} is older than 7 days at {day}; valuation is unavailable.')
+            raise MissingData(
+                _('%(label)s is older than 7 days at %(day)s; valuation is unavailable.')
+                % {'label': label, 'day': day}
+            )
         return value, observed
 
     def rate(self, currency, day, strict=True):

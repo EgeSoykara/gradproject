@@ -4,6 +4,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const open = document.querySelector('#sidebar').classList.toggle('open');
     menu.setAttribute('aria-expanded', String(open));
   });
+  const workspace = document.querySelector('.workspace-switch select');
+  if (workspace?.form && typeof workspace.form.requestSubmit === 'function') {
+    const form = workspace.form;
+    workspace.addEventListener('change', () => form.requestSubmit());
+    form.querySelector('button[type="submit"]').hidden = true;
+  }
   document.querySelectorAll('[data-confirm]').forEach(form => {
     form.addEventListener('submit', event => {
       if (!window.confirm(form.dataset.confirm)) event.preventDefault();
@@ -14,9 +20,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const figure = JSON.parse(document.getElementById(element.dataset.chart).textContent);
       Plotly.newPlot(element, figure.data, figure.layout, {
         responsive: true, displayModeBar: false, displaylogo: false,
+        locale: document.documentElement.lang,
       });
     } catch (error) {
-      element.textContent = 'The chart could not be loaded. Refresh the page to try again.';
+      element.textContent = document.body.dataset.chartError;
     }
   });
   const kind = document.querySelector('#id_kind');
@@ -31,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const updateQuantityLabel = () => {
       const metal = byId.get(asset.value)?.kind === 'metal';
       const cash = ['deposit', 'withdraw'].includes(kind.value);
-      quantityLabel.textContent = metal ? 'Grams:' : 'Units:';
+      quantityLabel.textContent = metal ? document.body.dataset.gramsLabel : document.body.dataset.unitsLabel;
       amount.closest('p').hidden = cash || metal;
       amount.disabled = cash || metal;
     };
@@ -46,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
       );
       asset.replaceChildren(...matches);
       asset.value = selected;
-      search.querySelector('[role="status"]').textContent = matches.length === 1 ? 'No matching assets.' : '';
+      search.querySelector('[role="status"]').textContent = matches.length === 1 ? document.body.dataset.noAssets : '';
     });
     asset.addEventListener('change', updateQuantityLabel);
     const toggle = () => {

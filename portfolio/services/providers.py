@@ -14,6 +14,7 @@ import requests
 from django.db import transaction
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
+from django.utils.translation import gettext as _
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 from portfolio.models import Asset, ExchangeRate, NewsItem, Price, SyncLog
@@ -30,39 +31,39 @@ def positive(value):
             raise ValueError
         return number.quantize(Decimal('0.00000001'))
     except (InvalidOperation, ValueError, TypeError):
-        raise ProviderError('Prices/rates must be finite numbers from 0.00000001 to below 1e12.')
+        raise ProviderError(_('Prices/rates must be finite numbers from 0.00000001 to below 1e12.'))
 
 
 def valid_day(value):
     try:
         day = date.fromisoformat(value)
     except (ValueError, TypeError):
-        raise ProviderError('Dates must use YYYY-MM-DD.')
+        raise ProviderError(_('Dates must use YYYY-MM-DD.'))
     if day > date.today():
-        raise ProviderError('Future observations are not accepted.')
+        raise ProviderError(_('Future observations are not accepted.'))
     return day
 
 
 @transaction.atomic
 def import_market(payload, dataset='live', source='CSV import'):
     if dataset not in ('live', 'demo'):
-        raise ProviderError('Unknown dataset.')
+        raise ProviderError(_('Unknown dataset.'))
     if not isinstance(payload, dict):
-        raise ProviderError('Expected a JSON object with prices and rates arrays.')
+        raise ProviderError(_('Expected a JSON object with prices and rates arrays.'))
     if not isinstance(payload.get('prices', []), list) or not isinstance(
         payload.get('rates', []), list
     ):
-        raise ProviderError('Prices and rates must be JSON arrays.')
+        raise ProviderError(_('Prices and rates must be JSON arrays.'))
     count = 0
     for row in payload.get('prices', []):
         try:
             asset = Asset.objects.get(symbol=row['symbol'])
             if dataset == 'live' and asset.symbol.startswith('DEMO-'):
-                raise ProviderError('Fictional demo fund symbols cannot contain live quotes.')
+                raise ProviderError(_('Fictional demo fund symbols cannot contain live quotes.'))
             day = valid_day(row['date'])
             price = positive(row['close'])
         except (KeyError, Asset.DoesNotExist, TypeError):
-            raise ProviderError('Every price requires a known symbol, date and close.')
+            raise ProviderError(_('Every price requires a known symbol, date and close.'))
         Price.objects.update_or_create(
             asset=asset,
             date=day,
@@ -76,9 +77,9 @@ def import_market(payload, dataset='live', source='CSV import'):
             day = valid_day(row['date'])
             rate = positive(row['try_per_unit'])
         except (KeyError, TypeError):
-            raise ProviderError('Every rate requires currency, date and try_per_unit.')
+            raise ProviderError(_('Every rate requires currency, date and try_per_unit.'))
         if currency not in ('USD', 'EUR', 'GBP'):
-            raise ProviderError('Rate currency must be USD, EUR or GBP; TRY is always 1.')
+            raise ProviderError(_('Rate currency must be USD, EUR or GBP; TRY is always 1.'))
         ExchangeRate.objects.update_or_create(
             currency=currency,
             date=day,
@@ -87,7 +88,7 @@ def import_market(payload, dataset='live', source='CSV import'):
         )
         count += 1
     if not count:
-        raise ProviderError('No price or exchange-rate observations were supplied.')
+        raise ProviderError(_('No price or exchange-rate observations were supplied.'))
     return count
 
 
@@ -109,7 +110,7 @@ def read_market_csv(text):
             )
         else:
             raise ProviderError(
-                'CSV type must be price or fx. Required columns: type,symbol,date,value.'
+                _('CSV type must be price or fx. Required columns: type,symbol,date,value.')
             )
     return result
 

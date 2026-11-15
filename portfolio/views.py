@@ -10,6 +10,8 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils.translation import gettext as _
+from django.utils.translation import ngettext
 from django.views.decorators.http import require_POST
 
 from .charts import allocation_chart, chart, line_chart
@@ -59,7 +61,7 @@ def valuation_context(request, with_history=True):
     form, currency, start, end = selection(request)
     ctx = {'range_form': form, 'currency': currency, 'page': 'dashboard', 'portfolio': portfolio}
     if not form.is_valid():
-        ctx['data_error'] = 'Correct the date/currency filters below.'
+        ctx['data_error'] = _('Correct the date/currency filters below.')
         return ctx
     try:
         book = MarketBook(portfolio.dataset)
@@ -143,7 +145,7 @@ def transaction_edit(request, pk=None):
             row.fx_to_try = MarketBook(p.dataset).rate(row.currency, row.date)
             save_transaction(row)
             messages.success(
-                request, 'Transaction saved. Portfolio balances have been recalculated.'
+                request, _('Transaction saved. Portfolio balances have been recalculated.')
             )
             return redirect('transactions')
         except (ValidationError, MissingData) as exc:
@@ -155,8 +157,8 @@ def transaction_edit(request, pk=None):
         'portfolio/form.html',
         {
             'form': form,
-            'title': 'Edit transaction' if pk else 'Record a transaction',
-            'subtitle': 'Record cash deposits before entering fund or metal transactions.',
+            'title': _('Edit transaction') if pk else _('Record a transaction'),
+            'subtitle': _('Record cash deposits before entering fund or metal transactions.'),
             'page': 'transactions',
             'cancel_url': 'transactions',
             'asset_options': [
@@ -173,7 +175,7 @@ def transaction_delete(request, pk):
     row = get_object_or_404(Transaction, pk=pk, portfolio__user=request.user)
     try:
         delete_transaction(row)
-        messages.success(request, 'Transaction deleted and balances recalculated.')
+        messages.success(request, _('Transaction deleted and balances recalculated.'))
     except ValidationError as exc:
         messages.error(request, '; '.join(exc.messages))
     return redirect('transactions')
@@ -192,10 +194,10 @@ def compare(request):
         dates = [str(d) for d in frame.index]
         f.add_trace(
             go.Scatter(
-                x=dates, y=frame['index'].tolist(), name='Your portfolio', line=dict(width=3)
+                x=dates, y=frame['index'].tolist(), name=_('Your portfolio'), line=dict(width=3)
             )
         )
-        rows = [{'name': 'Your portfolio', 'return': ctx['period_return']}]
+        rows = [{'name': _('Your portfolio'), 'return': ctx['period_return']}]
         errors = []
         for asset in benchmarks.filter(symbol__in=selected):
             try:
@@ -235,7 +237,7 @@ def analysis(request):
                     320,
                 )
         except MissingData:
-            ctx['correlation_error'] = 'Correlation needs aligned historical exchange rates.'
+            ctx['correlation_error'] = _('Correlation needs aligned historical exchange rates.')
     risk_level = request.GET.get('risk', 'balanced')
     if risk_level not in ('cautious', 'balanced', 'growth'):
         risk_level = 'balanced'
@@ -252,7 +254,7 @@ def analysis(request):
             raise ValueError
     except (InvalidOperation, ValueError):
         budget = Decimal(0)
-        ctx['budget_error'] = 'Enter a finite budget between 0 and 1 trillion.'
+        ctx['budget_error'] = _('Enter a finite budget between 0 and 1 trillion.')
     ctx['budget'] = budget
     candidates, seen = [], set()
     for run in ModelRun.objects.filter(dataset=ctx['portfolio'].dataset).select_related('asset'):
@@ -287,7 +289,7 @@ def analysis(request):
         run = candidates[0]['run']
         curve = run.metrics.get('test_curve', [])
         f = go.Figure()
-        for key, name in [('strategy', 'Model long/cash'), ('baseline', 'Buy and hold')]:
+        for key, name in [('strategy', _('Model long/cash')), ('baseline', _('Buy and hold'))]:
             f.add_trace(
                 go.Scatter(x=[r['date'] for r in curve], y=[r[key] for r in curve], name=name)
             )
@@ -303,9 +305,9 @@ def news(request):
     items = NewsItem.objects.filter(dataset=dataset)
     social = items.filter(kind='social')
     counts = {
-        'Positive': social.filter(sentiment__gte=0.05).count(),
-        'Neutral': social.filter(sentiment__gt=-0.05, sentiment__lt=0.05).count(),
-        'Negative': social.filter(sentiment__lte=-0.05).count(),
+        _('Positive'): social.filter(sentiment__gte=0.05).count(),
+        _('Neutral'): social.filter(sentiment__gt=-0.05, sentiment__lt=0.05).count(),
+        _('Negative'): social.filter(sentiment__lte=-0.05).count(),
     }
     return render(
         request,
@@ -348,7 +350,7 @@ def note_edit(request, pk=None):
         item = form.save(commit=False)
         item.portfolio = note.portfolio if note else active(request)
         item.save()
-        messages.success(request, 'Note saved.')
+        messages.success(request, _('Note saved.'))
         return redirect('notes')
     return render(
         request,
@@ -356,8 +358,8 @@ def note_edit(request, pk=None):
         {
             'page': 'notes',
             'form': form,
-            'title': 'Edit note' if pk else 'Create a note',
-            'subtitle': 'Keep the reasoning behind your decisions.',
+            'title': _('Edit note') if pk else _('Create a note'),
+            'subtitle': _('Keep the reasoning behind your decisions.'),
             'cancel_url': 'notes',
         },
     )
@@ -367,7 +369,7 @@ def note_edit(request, pk=None):
 @require_POST
 def note_delete(request, pk):
     get_object_or_404(Note, pk=pk, portfolio__user=request.user).delete()
-    messages.success(request, 'Note deleted.')
+    messages.success(request, _('Note deleted.'))
     return redirect('notes')
 
 
@@ -382,12 +384,12 @@ def settings_view(request):
             'price_count': Price.objects.filter(dataset='live').count(),
             'providers': [
                 {
-                    'name': 'GoldAPI · spot metals',
+                    'name': _('GoldAPI · spot metals'),
                     'configured': bool(os.getenv('GOLD_API_TOKEN')),
                     'variable': 'GOLD_API_TOKEN',
                 },
                 {
-                    'name': 'Market API',
+                    'name': _('Market API'),
                     'configured': bool(os.getenv('MARKET_API_URL')),
                     'variable': 'MARKET_API_URL / MARKET_API_KEY',
                 },
@@ -410,13 +412,13 @@ def settings_view(request):
 @require_POST
 def demo_load(request):
     if not Price.objects.filter(dataset='demo').exists():
-        messages.error(request, 'Run python manage.py seed_demo first, then try again.')
+        messages.error(request, _('Run python manage.py seed_demo first, then try again.'))
         return redirect('settings')
     p = create_demo_portfolio(request.user)
     request.session['portfolio_id'] = p.id
     messages.success(
         request,
-        'Learning portfolio loaded. All market data and headlines in this workspace are synthetic.',
+        _('Learning portfolio loaded. All market data and headlines in this workspace are synthetic.'),
     )
     return redirect('dashboard')
 
@@ -426,6 +428,11 @@ def demo_load(request):
 def portfolio_switch(request):
     p = get_object_or_404(Portfolio, pk=request.POST.get('portfolio_id'), user=request.user)
     request.session['portfolio_id'] = p.id
+    page = request.POST.get('return_page')
+    if page in {
+        'ai_dashboard', 'holdings', 'transactions', 'compare', 'analysis', 'news', 'notes', 'settings',
+    }:
+        return redirect(page)
     return redirect('ai_dashboard' if request.POST.get('from_ai_dashboard') == '1' else 'dashboard')
 
 
@@ -443,8 +450,8 @@ def portfolio_create(request):
         'portfolio/form.html',
         {
             'form': form,
-            'title': 'Create a portfolio',
-            'subtitle': 'A new portfolio uses market data. Import prices before recording trades.',
+            'title': _('Create a portfolio'),
+            'subtitle': _('A new portfolio uses market data. Import prices before recording trades.'),
             'page': 'settings',
             'cancel_url': 'settings',
         },
@@ -457,15 +464,20 @@ def market_import(request):
     # Market quotes are shared across accounts, so only the local administrator can import them.
     if not request.user.is_staff:
         return HttpResponse(
-            'Administrator access is required to modify shared market data.', status=403
+            _('Administrator access is required to modify shared market data.'), status=403
         )
     upload = request.FILES.get('file')
     try:
         if not upload or upload.size > 5 * 1024 * 1024:
-            raise ProviderError('Choose a CSV file smaller than 5 MB.')
+            raise ProviderError(_('Choose a CSV file smaller than 5 MB.'))
         text = upload.read().decode('utf-8-sig')
         count = import_market(read_market_csv(text))
-        messages.success(request, f'Imported {count} market observations.')
-    except (UnicodeDecodeError, ProviderError) as exc:
+        message = ngettext(
+            'Imported %(count)s market observation.', 'Imported %(count)s market observations.', count
+        )
+        messages.success(request, message % {'count': count})
+    except UnicodeDecodeError:
+        messages.error(request, _('The CSV file must use UTF-8 encoding.'))
+    except ProviderError as exc:
         messages.error(request, str(exc))
     return redirect('settings')

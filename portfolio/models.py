@@ -3,9 +3,10 @@ from decimal import Decimal
 from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 
 CURRENCIES = [(c, c) for c in ('TRY', 'USD', 'EUR', 'GBP')]
-DATASETS = [('demo', 'Demonstration'), ('live', 'Market data')]
+DATASETS = [('demo', _('Demonstration')), ('live', _('Market data'))]
 POSITIVE = MinValueValidator(Decimal('0.00000001'))
 
 
@@ -24,7 +25,7 @@ class Asset(models.Model):
     name = models.CharField(max_length=120)
     kind = models.CharField(
         max_length=12,
-        choices=[('fund', 'TEFAS fund'), ('metal', 'Precious metal'), ('benchmark', 'Benchmark')],
+        choices=[('fund', _('TEFAS fund')), ('metal', _('Precious metal')), ('benchmark', _('Benchmark'))],
     )
     currency = models.CharField(max_length=3, choices=CURRENCIES, default='TRY')
     unit = models.CharField(max_length=12, default='units')
@@ -64,7 +65,10 @@ class ExchangeRate(models.Model):
 
 
 class Transaction(models.Model):
-    KINDS = [('deposit', 'Deposit'), ('withdraw', 'Withdrawal'), ('buy', 'Buy'), ('sell', 'Sell')]
+    KINDS = [
+        ('deposit', _('Deposit')), ('withdraw', _('Withdrawal')),
+        ('buy', _('Buy')), ('sell', _('Sell')),
+    ]
     portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE, related_name='transactions')
     kind = models.CharField(max_length=8, choices=KINDS)
     asset = models.ForeignKey(Asset, on_delete=models.PROTECT, null=True, blank=True)
@@ -107,7 +111,7 @@ class NewsItem(models.Model):
     source = models.CharField(max_length=100)
     published_at = models.DateTimeField()
     dataset = models.CharField(max_length=4, choices=DATASETS)
-    kind = models.CharField(max_length=8, choices=[('news', 'News'), ('social', 'Social')])
+    kind = models.CharField(max_length=8, choices=[('news', _('News')), ('social', _('Social'))])
     sentiment = models.FloatField(default=0)
 
     class Meta:

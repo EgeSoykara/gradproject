@@ -6,6 +6,7 @@ from decimal import Decimal
 
 from django.core.exceptions import ValidationError
 from django.db import transaction as db_transaction
+from django.utils.translation import gettext as _
 
 from portfolio.models import Portfolio
 
@@ -29,19 +30,19 @@ class Ledger:
     def apply(self, row):
         if row.quantity <= 0 or row.price <= 0 or row.fee < 0 or row.fx_to_try <= 0:
             raise ValidationError(
-                'Amounts and exchange rates must be positive; fees cannot be negative.'
+                _('Amounts and exchange rates must be positive; fees cannot be negative.')
             )
         value = row.quantity * row.price * row.fx_to_try
         fee = row.fee * row.fx_to_try
         if row.kind in ('deposit', 'withdraw'):
             if row.asset_id or row.quantity != 1 or row.fee != 0:
-                raise ValidationError('Cash movements use quantity 1, no asset and no fee.')
+                raise ValidationError(_('Cash movements use quantity 1, no asset and no fee.'))
             change = value if row.kind == 'deposit' else -value
             self.cash += change
             self.contributions += change
         else:
             if not row.asset_id or row.asset.kind == 'benchmark':
-                raise ValidationError('Choose a fund or metal for a trade.')
+                raise ValidationError(_('Choose a fund or metal for a trade.'))
             p = self.positions[row.asset_id]
             if row.kind == 'buy':
                 p.quantity += row.quantity
@@ -50,7 +51,8 @@ class Ledger:
             elif row.kind == 'sell':
                 if row.quantity > p.quantity:
                     raise ValidationError(
-                        f'Insufficient {row.asset.symbol} on {row.date}. Later transactions must remain valid.'
+                        _('Insufficient %(symbol)s on %(day)s. Later transactions must remain valid.'),
+                        params={'symbol': row.asset.symbol, 'day': row.date},
                     )
                 released = p.cost * row.quantity / p.quantity
                 p.quantity -= row.quantity
@@ -58,10 +60,11 @@ class Ledger:
                 p.realized += value - fee - released
                 self.cash += value - fee
             else:
-                raise ValidationError('Unknown transaction type.')
+                raise ValidationError(_('Unknown transaction type.'))
         if self.cash < ZERO:
             raise ValidationError(
-                f'Insufficient cash on {row.date}. Add a deposit first or adjust subsequent transactions.'
+                _('Insufficient cash on %(day)s. Add a deposit first or adjust subsequent transactions.'),
+                params={'day': row.date},
             )
 
 

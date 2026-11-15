@@ -10,7 +10,6 @@ TEXT = {
     'sample': ('Örnek veri', 'Example data'),
     'connected': ('Portföy verisi', 'Portfolio data'),
     'snapshot_date': ('USD kuru tarihi', 'USD rate date'),
-    'language': ('Dil', 'Language'),
     'currency': ('Para birimi', 'Currency'),
     'profile': ('Profil', 'Profile'),
     'level': ('Görünüm', 'View'),

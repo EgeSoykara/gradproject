@@ -223,6 +223,37 @@ class PortfolioTests(TestCase):
             with self.subTest(name=name):
                 self.assertEqual(self.client.get(reverse(name)).status_code, 200)
 
+    def test_language_switch_persists_across_pages_and_sessions(self):
+        self.client.force_login(self.user)
+        analysis_url = reverse('analysis')
+        response = self.client.post(
+            reverse('set_language'),
+            {'language': 'tr', 'next': f'{analysis_url}?lang=en&currency=TRY'},
+        )
+        self.assertRedirects(response, f'{analysis_url}?currency=TRY')
+        self.assertContains(self.client.get(analysis_url), 'Yapay zekâ analizleri')
+        self.assertContains(self.client.get(reverse('transactions')), '<h1>İşlemler</h1>', html=True)
+        self.assertContains(self.client.get(reverse('transaction_new')), 'İşlem kaydet')
+        self.assertContains(self.client.get(reverse('ai_dashboard')), '<html lang="tr">')
+
+        new_session = Client()
+        new_session.force_login(self.user)
+        self.assertContains(new_session.get(reverse('notes')), '<h1>Notlarım</h1>', html=True)
+        response = new_session.post(
+            reverse('set_language'), {'language': 'en', 'next': reverse('notes')}
+        )
+        self.assertRedirects(response, reverse('notes'))
+        self.assertContains(self.client.get(reverse('notes')), '<h1>My notes</h1>', html=True)
+
+    def test_language_switch_works_before_sign_in(self):
+        response = self.client.post(
+            reverse('set_language'),
+            {'language': 'tr', 'next': 'https://example.com/'},
+        )
+        self.assertRedirects(response, '/', fetch_redirect_response=False)
+        self.assertContains(self.client.get(reverse('login')), 'Portföyüne giriş yap')
+        self.assertContains(self.client.get(reverse('register')), 'Çalışma alanını oluştur')
+
     def test_delete_requires_post_and_csrf(self):
         self.client.force_login(self.user)
         row = self.tx()

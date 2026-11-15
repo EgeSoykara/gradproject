@@ -2,6 +2,7 @@ from datetime import date
 
 import numpy as np
 import pandas as pd
+from django.utils.translation import gettext as _
 
 from .valuation import MissingData
 
@@ -45,8 +46,8 @@ def risk_metrics(returns, weights=(), annual_risk_free=0.0):
 
 def stress_tests(snap, book):
     windows = [
-        ('Pandemic window', date(2020, 2, 19), date(2020, 3, 23)),
-        ('2022 tightening window', date(2022, 1, 3), date(2022, 10, 12)),
+        (_('Pandemic window'), date(2020, 2, 19), date(2020, 3, 23)),
+        (_('2022 tightening window'), date(2022, 1, 3), date(2022, 10, 12)),
     ]
     results = []
     for name, start, end in windows:

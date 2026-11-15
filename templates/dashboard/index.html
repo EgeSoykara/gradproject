@@ -11,9 +11,6 @@
   <form class="bridge-controls panel" method="post" action="{% url 'dashboard_preferences' %}">
     {% csrf_token %}
     {% if first_visit %}<p class="profile-guide"><strong>{{ t.choose_profile }}</strong> {{ t.profile_guide }}</p>{% endif %}
-    <label>{{ t.language }}
-      <select name="language"><option value="tr" {% if language == 'tr' %}selected{% endif %}>TR</option><option value="en" {% if language == 'en' %}selected{% endif %}>EN</option></select>
-    </label>
     <label>{{ t.currency }}
       <select name="currency">
         <option {% if currency == 'TRY' %}selected{% endif %}>TRY</option>

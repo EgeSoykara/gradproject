@@ -28,7 +28,7 @@ class PreferenceForm(forms.ModelForm):
 
     class Meta:
         model = DashboardPreferences
-        fields = ['language', 'currency', 'profile', 'level', 'monthly_contribution']
+        fields = ['currency', 'profile', 'level', 'monthly_contribution']
 
 
 class DashboardQuery(forms.Form):
@@ -46,7 +46,7 @@ class DashboardQuery(forms.Form):
 def read_payload(request, preferences, params):
     return load_dashboard(
         request.user,
-        params.get('lang') or preferences.language,
+        params.get('lang') or request.LANGUAGE_CODE,
         currency=params.get('currency') or preferences.currency,
         profile=params.get('profile') or preferences.profile,
         portfolio=workspace(request).get('active_portfolio'),
@@ -58,7 +58,7 @@ def read_payload(request, preferences, params):
 @never_cache
 @require_safe
 def dashboard(request):
-    stored = DashboardPreferences.objects.filter(user=request.user).first()
+    stored = request.dashboard_preferences
     preferences = stored or DashboardPreferences()
     query = DashboardQuery(request.GET)
     valid_query = query.is_valid()
@@ -66,7 +66,7 @@ def dashboard(request):
     context = {
         'page': 'ai_dashboard',
         'first_visit': stored is None,
-        'language': params.get('lang') or preferences.language,
+        'language': params.get('lang') or request.LANGUAGE_CODE,
         'currency': params.get('currency') or preferences.currency,
         'profile': params.get('profile') or preferences.profile,
         'level': params.get('level') or preferences.level,
@@ -84,19 +84,24 @@ def dashboard(request):
         context['data_unavailable'] = True
     else:
         context.update(dashboard_context(payload, context['language'], context['currency']))
-    with translation.override(context['language']):
-        return render(request, 'dashboard/index.html', context)
+    if context['language'] != request.LANGUAGE_CODE:
+        translation.activate(context['language'])
+        request.LANGUAGE_CODE = context['language']
+    return render(request, 'dashboard/index.html', context)
 
 
 @login_required
 @require_POST
 def preferences(request):
-    current = DashboardPreferences.objects.filter(user=request.user).first()
+    current = request.dashboard_preferences
     form = PreferenceForm(request.POST, instance=current)
     fixture = request.POST.get('fixture')
     query = {'fixture': fixture} if settings.USE_MOCK_DASHBOARD and fixture in dict(mock_choices()) else {}
     if form.is_valid():
-        DashboardPreferences.objects.update_or_create(user=request.user, defaults=form.cleaned_data)
+        DashboardPreferences.objects.update_or_create(
+            user=request.user, defaults=form.cleaned_data,
+            create_defaults={'language': request.LANGUAGE_CODE, **form.cleaned_data},
+        )
     else:
         query['invalid'] = '1'
     url = reverse('ai_dashboard')
@@ -111,7 +116,7 @@ def dashboard_api(request):
     query = DashboardQuery(request.GET)
     if not query.is_valid():
         return JsonResponse({'errors': query.errors.get_json_data()}, status=400)
-    preferences = DashboardPreferences.objects.filter(user=request.user).first()
+    preferences = request.dashboard_preferences
     try:
         payload = read_payload(request, preferences or DashboardPreferences(), query.cleaned_data)
     except (DashboardUnavailable, MissingData):
