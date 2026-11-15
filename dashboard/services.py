@@ -32,6 +32,11 @@ def mock_choices():
     ]
 
 
+def mock_profile_reference(profile):
+    with (MOCK_DIR / 'profile_reference.json').open(encoding='utf-8') as source:
+        return json.load(source)[profile]
+
+
 def load_dashboard(user, lang, *, currency=None, profile=None, portfolio=None, fixture=DEFAULT_FIXTURE):
     if settings.USE_MOCK_DASHBOARD:
         filename = dict(mock_choices()).get(fixture)

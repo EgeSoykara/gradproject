@@ -8,6 +8,7 @@ from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.translation import gettext as _
@@ -348,8 +349,10 @@ def note_edit(request, pk=None):
     form = NoteForm(request.POST or None, instance=note)
     if request.method == 'POST' and form.is_valid():
         item = form.save(commit=False)
-        item.portfolio = note.portfolio if note else active(request)
-        item.save()
+        portfolio = note.portfolio if note else active(request)
+        with transaction.atomic():
+            item.portfolio = portfolio or Portfolio.objects.create(user=request.user, name='My portfolio')
+            item.save()
         messages.success(request, _('Note saved.'))
         return redirect('notes')
     return render(

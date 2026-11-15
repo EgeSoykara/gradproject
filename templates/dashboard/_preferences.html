@@ -1,0 +1,53 @@
+<form class="dashboard-preference-form" method="post" action="{% url 'dashboard_preferences' %}">
+  {% csrf_token %}
+  <fieldset class="dashboard-option-group">
+    <legend>{{ t.level }}</legend>
+    <div class="dashboard-options">
+      {% for code, title, help in level_options %}
+        <label class="dashboard-option">
+          <input type="radio" name="level" value="{{ code }}"{% if code == level %} checked{% endif %} required>
+          <span><strong>{{ title }}</strong><small>{{ help }}</small></span>
+        </label>
+      {% endfor %}
+    </div>
+  </fieldset>
+  <fieldset class="dashboard-option-group">
+    <legend>{{ t.profile }}</legend>
+    <div class="dashboard-options dashboard-options-profiles">
+      {% for code, title, help in profile_options %}
+        <label class="dashboard-option">
+          <input type="radio" name="profile" value="{{ code }}"{% if code == profile %} checked{% endif %} required>
+          <span><strong>{{ title }}</strong><small>{{ help }}</small></span>
+        </label>
+      {% endfor %}
+    </div>
+  </fieldset>
+  <div class="bridge-controls">
+    <label>{{ t.currency }}
+      <select name="currency">
+        <option value="TRY"{% if currency == 'TRY' %} selected{% endif %}>TRY</option>
+        <option value="USD"{% if currency == 'USD' %} selected{% endif %}>USD</option>
+        <option value="EUR"{% if currency == 'EUR' %} selected{% endif %}>EUR</option>
+        <option value="GBP"{% if currency == 'GBP' %} selected{% endif %}>GBP</option>
+      </select>
+    </label>
+    {% if mock %}
+      <input type="hidden" name="monthly_contribution" value="{{ monthly_contribution|stringformat:'s' }}">
+      {% if fixtures|length > 1 %}
+        <label>{{ t.fixture }}
+          <select name="fixture">
+            {% for code, filename in fixtures %}
+              <option value="{{ code }}"{% if code == fixture %} selected{% endif %}>{% if code == 'example' %}{{ t.fixture_example }}{% else %}{{ t.fixture }} {{ code|slice:"-1:" }}{% endif %}</option>
+            {% endfor %}
+          </select>
+        </label>
+      {% endif %}
+    {% else %}
+      <label>{{ t.monthly }}
+        <input type="number" min="0" max="999999999999.99" step="0.01" required name="monthly_contribution" value="{{ monthly_contribution|stringformat:'s' }}">
+      </label>
+    {% endif %}
+    <button class="button" type="submit">{{ t.apply }}</button>
+  </div>
+  {% if mock %}<p class="bridge-muted">{{ t.reference_note }}</p>{% endif %}
+</form>

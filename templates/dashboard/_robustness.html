@@ -1,25 +1,51 @@
-<section class="panel bridge-card">
-  <h2>{{ t.robustness }}</h2>
-  {% include 'dashboard/_copy.html' with block=r %}
-  <div class="bridge-split">
-    <div class="score-panel">
-      {% if r.score is not None %}
-        <p class="bridge-kpi-label">{{ t.score }}</p>
-        <p class="bridge-total">{{ r.score }}<span> / 100</span></p>
-        <meter min="0" max="100" value="{{ r.score|stringformat:'s' }}" aria-label="{{ t.score }}"></meter>
-        {% if r.grade %}<p class="bridge-muted">{{ t.grade }} · <strong>{{ r.grade }}</strong></p>{% endif %}
-      {% else %}<p class="bridge-muted">{{ t.missing }}</p>{% endif %}
-    </div>
-    {% include 'dashboard/_chart.html' with figure=r.bar chart_id='bridge-robustness' label=t.robustness %}
+{% if r.score is not None %}
+  <div class="score-panel dashboard-score">
+    <p class="bridge-kpi-label">{{ robustness_source }}{% if level == 'expert' and r.grade %} · {{ t.grade }} {{ r.grade }}{% endif %}</p>
+    <p class="bridge-total">{{ r.score }} <span>/ 100</span></p>
+    <meter min="0" max="100" value="{{ r.score|stringformat:'s' }}" aria-label="{{ t.score }}"></meter>
   </div>
-  <div class="bridge-section">
-    <h3>{{ t.scenarios }}</h3>
-    {% if r.scenarios %}
-      <div class="table-wrap"><table class="bridge-table">
+  <p class="dashboard-explainer">{{ t.risk_explain }}</p>
+{% else %}<p class="bridge-muted">{{ t.missing }}</p>{% endif %}
+
+{% if r.weakest %}
+  <div class="dashboard-observation">
+    <strong>{{ t.weakest_scenario }} · {{ r.scenario_currency }}</strong>
+    <span>{{ r.weakest.0 }} <b>{% include 'dashboard/_pct.html' with value=r.weakest.1 %}</b></span>
+    {% if level == 'beginner' %}<small>{{ t.scenario_explain }}</small>{% endif %}
+  </div>
+{% endif %}
+
+{% if level == 'expert' %}
+  {% if r.parts %}
+    <div class="bridge-section">
+      <h3>{{ t.risk_components }}</h3>
+      <ul class="dashboard-meter-list dashboard-risk-components">
+        {% for label, value, limit in r.parts %}
+          <li>
+            <div><span>{{ label }}</span><strong>{{ value|floatformat:'-1' }} / {{ limit }}</strong></div>
+            <meter min="0" value="{{ value|stringformat:'s' }}" max="{{ limit|stringformat:'s' }}" aria-label="{{ label }}"></meter>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+  {% if r.estimates %}
+    <details class="dashboard-secondary">
+      <summary>{{ t.risk_estimates }}</summary>
+      <dl class="bridge-facts dashboard-secondary-body">
+        {% for label, value in r.estimates %}<dt>{{ label }}</dt><dd>{% include 'dashboard/_pct.html' %}</dd>{% endfor %}
+      </dl>
+    </details>
+  {% endif %}
+  {% if r.scenarios %}
+    <details class="dashboard-secondary">
+      <summary>{{ t.scenarios }}</summary>
+      <div class="dashboard-secondary-body table-wrap"><table class="bridge-table">
         <thead><tr><th scope="col">{{ t.scenario }}</th><th scope="col">{{ t.tl_change }}</th><th scope="col">{{ t.usd_change }}</th></tr></thead>
         <tbody>{% for name, tl, usd in r.scenarios %}<tr><th scope="row">{{ name }}</th><td>{% include 'dashboard/_pct.html' with value=tl %}</td><td>{% include 'dashboard/_pct.html' with value=usd %}</td></tr>{% endfor %}</tbody>
       </table></div>
-    {% else %}<p class="bridge-muted">{{ t.missing }}</p>{% endif %}
-  </div>
-  {% include 'dashboard/_disclaimer.html' with text=r.disclaimer %}
-</section>
+    </details>
+  {% endif %}
+{% endif %}
+{% include 'dashboard/_copy.html' with block=r %}
+{% include 'dashboard/_disclaimer.html' with text=r.disclaimer %}

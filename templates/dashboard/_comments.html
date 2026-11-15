@@ -1,0 +1,13 @@
+<div class="bridge-list">
+  {% for item in comments_data.items %}
+    <details class="dashboard-secondary dashboard-comment{% if item.severity == 'attention' %} dashboard-comment-attention{% endif %}">
+      <summary>{% firstof item.title t.info %}</summary>
+      <div class="dashboard-secondary-body">
+        <p class="dashboard-explainer">{{ item.preview }}</p>
+        {% include 'dashboard/_disclaimer.html' with text=item.disclaimer %}
+      </div>
+    </details>
+  {% empty %}<p class="bridge-muted">{{ t.missing }}</p>{% endfor %}
+</div>
+{% include 'dashboard/_copy.html' with block=comments_data %}
+{% include 'dashboard/_disclaimer.html' with text=comments_data.disclaimer %}

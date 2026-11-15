@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!window.confirm(form.dataset.confirm)) event.preventDefault();
     });
   });
-  document.querySelectorAll('[data-chart]').forEach(element => {
+  const renderChart = element => {
     try {
       const figure = JSON.parse(document.getElementById(element.dataset.chart).textContent);
       Plotly.newPlot(element, figure.data, figure.layout, {
@@ -25,7 +25,28 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (error) {
       element.textContent = document.body.dataset.chartError;
     }
+  };
+  document.querySelectorAll('[data-chart]').forEach(element => {
+    const details = element.closest('details');
+    if (!details || details.open) {
+      renderChart(element);
+      return;
+    }
+    const renderOnOpen = () => {
+      if (!details.open) return;
+      details.removeEventListener('toggle', renderOnOpen);
+      renderChart(element);
+    };
+    details.addEventListener('toggle', renderOnOpen);
   });
+  const openDashboardSection = hash => {
+    const section = document.getElementById(hash.slice(1));
+    if (section?.matches('details.dashboard-detail')) section.open = true;
+  };
+  document.querySelectorAll('.bridge-dashboard a[href^="#"]').forEach(link => {
+    link.addEventListener('click', () => openDashboardSection(link.hash));
+  });
+  openDashboardSection(window.location.hash);
   const kind = document.querySelector('#id_kind');
   if (kind) {
     const asset = document.querySelector('#id_asset');

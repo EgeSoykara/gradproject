@@ -342,6 +342,22 @@ class PortfolioTests(TestCase):
         self.assertNotContains(response, '<script>alert(1)</script>')
         self.assertContains(response, '&lt;script&gt;')
 
+    def test_note_lifecycle_for_account_without_portfolio(self):
+        user = User.objects.create_user('notes-only')
+        self.client.force_login(user)
+        response = self.client.post(reverse('note_new'), {'title': 'First note', 'body': 'Review next week'})
+        self.assertRedirects(response, reverse('notes'))
+        note = Note.objects.get(portfolio__user=user)
+        self.assertEqual(note.title, 'First note')
+        response = self.client.post(reverse('note_edit', args=[note.pk]), {
+            'title': 'Updated note', 'body': 'Review next month',
+        })
+        self.assertRedirects(response, reverse('notes'))
+        note.refresh_from_db()
+        self.assertEqual(note.body, 'Review next month')
+        self.assertRedirects(self.client.post(reverse('note_delete', args=[note.pk])), reverse('notes'))
+        self.assertFalse(Note.objects.filter(pk=note.pk).exists())
+
     def test_registration_and_transaction_form_flow(self):
         response = self.client.post(
             reverse('register'),

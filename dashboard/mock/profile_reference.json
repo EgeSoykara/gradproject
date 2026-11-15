@@ -1,0 +1,41 @@
+{
+  "conservative": {
+    "as_of": "2026-11-13",
+    "weights": {
+      "Borclanma-TL": 24.88,
+      "Değişken": 5.16,
+      "FonSepeti-Yabanci": 1.43,
+      "Hisse-Yabanci": 10.25,
+      "Hisse-Yerli": 0.33,
+      "Katilim-Diger": 25.02,
+      "Kiymetli-Maden": 4.87,
+      "Para Piyasası": 28.07
+    }
+  },
+  "balanced": {
+    "as_of": "2026-11-13",
+    "weights": {
+      "Borclanma-TL": 23.78,
+      "Değişken": 4.37,
+      "FonSepeti-Yabanci": 1.81,
+      "Hisse-Yabanci": 12.04,
+      "Hisse-Yerli": 0.74,
+      "Katilim-Diger": 24.03,
+      "Kiymetli-Maden": 5.46,
+      "Para Piyasası": 27.78
+    }
+  },
+  "aggressive": {
+    "as_of": "2026-11-13",
+    "weights": {
+      "Borclanma-TL": 23.86,
+      "Değişken": 4.67,
+      "FonSepeti-Yabanci": 1.8,
+      "Hisse-Yabanci": 12.02,
+      "Hisse-Yerli": 0.73,
+      "Katilim-Diger": 24.12,
+      "Kiymetli-Maden": 5.43,
+      "Para Piyasası": 27.38
+    }
+  }
+}

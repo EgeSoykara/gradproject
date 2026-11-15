@@ -1,28 +1,48 @@
-<section class="panel bridge-card">
-  <h2>{{ t.rebalance }}</h2>
-  {% include 'dashboard/_copy.html' with block=r %}
-  {% if r.description %}<p class="source-copy">{{ r.description }}</p>{% endif %}
-  {% for name, entries in r.tables %}
-    <div class="bridge-section">
-      <h3>{{ name }}</h3>
-      {% if entries %}
-        <div class="table-wrap"><table class="bridge-table">
-          <thead><tr><th scope="col">{{ name }}</th><th scope="col">{{ t.current }}</th><th scope="col">{{ t.target }}</th><th scope="col">{{ t.gap }}</th></tr></thead>
-          <tbody>{% for name, actual, target, diff in entries %}
-            <tr><th scope="row">{{ name }}</th><td>{% include 'dashboard/_pct.html' with value=actual %}</td><td>{% include 'dashboard/_pct.html' with value=target %}</td><td>{% include 'dashboard/_pct.html' with value=diff %}</td></tr>
-          {% endfor %}</tbody>
-        </table></div>
-      {% else %}<p class="bridge-muted">{{ t.missing }}</p>{% endif %}
-    </div>
-  {% endfor %}
-  {% include 'dashboard/_chart.html' with figure=r.grouped chart_id='bridge-rebalance' label=t.rebalance %}
-  <div class="bridge-split bridge-section">
-    <div>
-      <h3>{{ t.contribution }}</h3>
-      {% if r.contribution_description %}<p class="source-copy">{{ r.contribution_description }}</p>{% endif %}
+<div class="dashboard-observation">
+  <strong>{{ t.profile }} · {{ profile_label }}</strong>
+  <small>{{ profile_help }}</small>
+</div>
+<p class="dashboard-explainer">{{ t.rebalance_explain }}</p>
+{% if r.reference_date %}<p class="bridge-muted">{{ t.reference_date }} · {{ r.reference_date }}</p>{% endif %}
+
+{% if r.rows %}
+  <div class="dashboard-comparison">
+    {% include 'dashboard/_comparison_bars.html' with rows=r.rows|slice:":3" %}
+  </div>
+  {% if r.rows|length > 3 %}
+    <details class="dashboard-secondary">
+      <summary>{{ t.all_allocations }}</summary>
+      <div class="dashboard-secondary-body">{% include 'dashboard/_comparison_bars.html' with rows=r.rows|slice:"3:" %}</div>
+    </details>
+  {% endif %}
+{% else %}<p class="bridge-muted">{{ t.missing }}</p>{% endif %}
+
+{% if level == 'expert' and r.funds %}
+  <details class="dashboard-secondary">
+    <summary>{{ t.fund_allocations }}</summary>
+    <div class="dashboard-secondary-body table-wrap"><table class="bridge-table">
+      <thead><tr><th scope="col">{{ t.fund }}</th><th scope="col">{{ t.current }}</th><th scope="col">{{ t.target }}</th><th scope="col">{{ t.gap }}</th></tr></thead>
+      <tbody>{% for name, actual, target, diff in r.funds %}
+        <tr><th scope="row">{{ name }}</th><td>{% include 'dashboard/_pct.html' with value=actual %}</td><td>{% include 'dashboard/_pct.html' with value=target %}</td><td>{% include 'dashboard/_pct.html' with value=diff %}</td></tr>
+      {% endfor %}</tbody>
+    </table></div>
+  </details>
+{% endif %}
+{% if r.contribution %}
+  <details class="dashboard-secondary">
+    <summary>{{ t.contribution }}</summary>
+    <div class="dashboard-secondary-body">
+      <p class="dashboard-explainer">{{ t.contribution_explain }}</p>
+      {% if level == 'expert' and r.contribution_description %}<p class="bridge-muted">{{ r.contribution_description }}</p>{% endif %}
       {% include 'dashboard/_amounts.html' with rows=r.contribution %}
     </div>
-    <div><h3>{{ t.cash_example }}</h3>{% include 'dashboard/_amounts.html' with rows=r.cash %}</div>
-  </div>
-  {% include 'dashboard/_disclaimer.html' with text=r.disclaimer %}
-</section>
+  </details>
+{% endif %}
+{% if r.cash %}
+  <details class="dashboard-secondary">
+    <summary>{{ t.cash_example }}</summary>
+    <div class="dashboard-secondary-body">{% include 'dashboard/_amounts.html' with rows=r.cash %}</div>
+  </details>
+{% endif %}
+{% if r.matches_profile %}{% include 'dashboard/_copy.html' with block=r %}{% endif %}
+{% include 'dashboard/_disclaimer.html' with text=r.disclaimer %}

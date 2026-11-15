@@ -1,0 +1,13 @@
+<ul class="dashboard-comparison-list">
+  {% for name, actual, target, diff in rows %}
+    <li>
+      <strong>{{ name }}</strong>
+      <div class="dashboard-comparison-bar"><small>{{ t.current }}</small>
+        {% if actual is not None %}<progress value="{{ actual|stringformat:'s' }}" max="100" aria-label="{{ name }} · {{ t.current }}"></progress>{% else %}<span></span>{% endif %}
+        <b>{% include 'dashboard/_pct.html' with value=actual %}</b></div>
+      <div class="dashboard-comparison-bar dashboard-target-bar"><small>{{ t.target }}</small>
+        {% if target is not None %}<progress value="{{ target|stringformat:'s' }}" max="100" aria-label="{{ name }} · {{ t.target }}"></progress>{% else %}<span></span>{% endif %}
+        <b>{% include 'dashboard/_pct.html' with value=target %}</b></div>
+    </li>
+  {% endfor %}
+</ul>

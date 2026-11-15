@@ -1,0 +1,25 @@
+<p class="dashboard-explainer">{{ t.news_explain }}</p>
+{% if news_data.status %}<p class="dashboard-observation"><strong>{{ news_data.status }}</strong></p>{% endif %}
+{% if news_data.counts %}
+  <dl class="dashboard-metrics">
+    {% for label, count in news_data.counts %}{% if count is not None %}<div><dt>{{ label }}</dt><dd>{{ count }}</dd></div>{% endif %}{% endfor %}
+  </dl>
+{% endif %}
+{% for theme in news_data.themes %}
+  <details class="dashboard-secondary">
+    <summary>{{ theme.name }} {% if theme.status %}<small>{{ theme.status }}</small>{% endif %}</summary>
+    <div class="dashboard-secondary-body">
+      {% if not theme.insufficient %}
+        {% with headline=theme.headline %}
+          {% if headline.title or headline.text %}<p class="source-copy">{% firstof headline.title headline.text %}</p>{% else %}<p class="bridge-muted">{{ t.missing }}</p>{% endif %}
+          {% if headline.source or headline.date or headline.published_at %}<small class="bridge-muted">{{ headline.source }} {% firstof headline.date headline.published_at %}</small>{% endif %}
+        {% endwith %}
+        {% if level == 'expert' %}
+          <dl class="bridge-facts">{% for label, count in theme.counts %}{% if count is not None %}<dt>{{ label }}</dt><dd>{{ count }}</dd>{% endif %}{% endfor %}</dl>
+        {% endif %}
+      {% else %}<p class="bridge-muted">{{ t.insufficient }}</p>{% endif %}
+    </div>
+  </details>
+{% empty %}<p class="bridge-muted">{{ t.missing }}</p>{% endfor %}
+{% include 'dashboard/_copy.html' with block=news_data %}
+{% include 'dashboard/_disclaimer.html' with text=news_data.disclaimer %}

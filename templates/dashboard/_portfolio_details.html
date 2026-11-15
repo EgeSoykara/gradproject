@@ -1,0 +1,38 @@
+{% if p.primary_row %}
+  <p class="dashboard-explainer">{{ t.tracker_explain }}</p>
+  <dl class="dashboard-metrics">
+    <div><dt>{{ t.invested }}</dt><dd>{{ p.primary_row.1|floatformat:'2g'|default:'—' }} <small>{{ p.primary_row.0 }}</small></dd></div>
+    <div><dt>{{ t.value }}</dt><dd>{{ p.primary_row.2|floatformat:'2g'|default:'—' }} <small>{{ p.primary_row.0 }}</small></dd></div>
+    <div><dt>{{ t.gap }}</dt><dd>{{ p.primary_row.3|floatformat:'2g'|default:'—' }} <small>{{ p.primary_row.0 }}</small></dd></div>
+  </dl>
+{% else %}<p class="bridge-muted">{{ t.tracker_missing }}</p>{% endif %}
+<details class="dashboard-secondary">
+  <summary>{{ t.currency_details }}</summary>
+  <div class="dashboard-secondary-body">
+    {% if p.as_of %}<p class="bridge-muted">{{ t.snapshot_date }} · {{ p.as_of }}</p>{% endif %}
+    <ul class="currency-list">
+      {% for code, value in p.others %}{% if value is not None %}<li><span>{{ code }}</span>{{ value|floatformat:'2g' }}</li>{% endif %}{% endfor %}
+    </ul>
+    {% if p.protected is not None %}
+      <div class="protection-value"><span>{{ t.protected }}</span><strong>{% include 'dashboard/_pct.html' with value=p.protected %}</strong></div>
+      <progress class="dashboard-protection" value="{{ p.protected|stringformat:'s' }}" max="100" aria-label="{{ t.protected }}"></progress>
+    {% endif %}
+    {% if level == 'expert' and p.protected_text %}<p class="source-copy">{{ p.protected_text }}</p>{% endif %}
+  </div>
+</details>
+{% if level == 'expert' and p.tracker_rows %}
+  <details class="dashboard-secondary">
+    <summary>{{ t.tracker }}</summary>
+    <div class="dashboard-secondary-body">
+      {% if p.months is not None %}<p class="bridge-muted">{{ t.months }} · {{ p.months }}</p>{% endif %}
+      <div class="table-wrap"><table class="bridge-table">
+        <thead><tr><th scope="col">{{ t.currency }}</th><th scope="col">{{ t.invested }}</th><th scope="col">{{ t.value }}</th><th scope="col">{{ t.gap }}</th></tr></thead>
+        <tbody>{% for name, invested, current, gap, gap_pct in p.tracker_rows %}
+          <tr><th scope="row">{{ name }}</th><td>{{ invested|floatformat:'2g'|default:'—' }}</td><td>{{ current|floatformat:'2g'|default:'—' }}</td><td>{{ gap|floatformat:'2g'|default:'—' }}{% if gap_pct is not None %} ({% include 'dashboard/_pct.html' with value=gap_pct %}){% endif %}</td></tr>
+        {% endfor %}</tbody>
+      </table></div>
+    </div>
+  </details>
+{% endif %}
+{% include 'dashboard/_copy.html' with block=p %}
+{% include 'dashboard/_disclaimer.html' with text=p.disclaimer %}

@@ -3,6 +3,7 @@ from urllib.parse import urlencode
 
 from django import forms
 from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
@@ -17,7 +18,13 @@ from portfolio.services.valuation import MissingData
 
 from .models import LANGUAGES, LEVELS, PROFILES, DashboardPreferences
 from .presentation import dashboard_context, dashboard_labels
-from .services import DEFAULT_FIXTURE, DashboardUnavailable, load_dashboard, mock_choices
+from .services import (
+    DEFAULT_FIXTURE,
+    DashboardUnavailable,
+    load_dashboard,
+    mock_choices,
+    mock_profile_reference,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -50,8 +57,16 @@ def read_payload(request, preferences, params):
         currency=params.get('currency') or preferences.currency,
         profile=params.get('profile') or preferences.profile,
         portfolio=workspace(request).get('active_portfolio'),
-        fixture=params.get('fixture') or DEFAULT_FIXTURE,
+        fixture=selected_fixture(request, params.get('fixture')),
     )
+
+
+def selected_fixture(request, fixture=None):
+    if settings.USE_MOCK_DASHBOARD:
+        choice = fixture or request.session.get('dashboard_fixture')
+        if choice in dict(mock_choices()):
+            return choice
+    return DEFAULT_FIXTURE
 
 
 @login_required
@@ -65,25 +80,37 @@ def dashboard(request):
     params = query.cleaned_data if valid_query else {}
     context = {
         'page': 'ai_dashboard',
-        'first_visit': stored is None,
         'language': params.get('lang') or request.LANGUAGE_CODE,
         'currency': params.get('currency') or preferences.currency,
         'profile': params.get('profile') or preferences.profile,
         'level': params.get('level') or preferences.level,
         'monthly_contribution': preferences.monthly_contribution,
         'mock': settings.USE_MOCK_DASHBOARD,
-        'fixture': params.get('fixture') or DEFAULT_FIXTURE,
+        'fixture': selected_fixture(request, params.get('fixture')),
         'fixtures': mock_choices() if settings.USE_MOCK_DASHBOARD else [],
         'query_error': not valid_query or request.GET.get('invalid') == '1',
     }
-    context['t'] = dashboard_labels(context['language'])
+    labels = dashboard_labels(context['language'])
+    context.update(t=labels, profile_label=labels[context['profile']], level_label=labels[context['level']],
+                   profile_help=labels[f"{context['profile']}_help"])
+    context['robustness_source'] = labels['robustness_engine']
+    if context['mock']:
+        fixture = context['fixture']
+        fixture_label = labels['fixture_example'] if fixture == 'example' else f"{labels['fixture']} {fixture[-1]}"
+        context['robustness_source'] = f"{fixture_label} · {labels['robustness_archive']}"
+    context['level_options'] = [(code, labels[code], labels[f'{code}_help']) for code, _ in LEVELS]
+    context['profile_options'] = [(code, labels[code], labels[f'{code}_help']) for code, _ in PROFILES]
     try:
         payload = read_payload(request, preferences, params)
     except (DashboardUnavailable, MissingData):
         logger.info('Dashboard data unavailable', exc_info=True)
         context['data_unavailable'] = True
     else:
-        context.update(dashboard_context(payload, context['language'], context['currency']))
+        reference = mock_profile_reference(context['profile']) if context['mock'] else None
+        context.update(dashboard_context(
+            payload, context['language'], context['currency'],
+            profile=context['profile'], level=context['level'], reference=reference,
+        ))
     if context['language'] != request.LANGUAGE_CODE:
         translation.activate(context['language'])
         request.LANGUAGE_CODE = context['language']
@@ -102,6 +129,9 @@ def preferences(request):
             user=request.user, defaults=form.cleaned_data,
             create_defaults={'language': request.LANGUAGE_CODE, **form.cleaned_data},
         )
+        if query:
+            request.session['dashboard_fixture'] = fixture
+        messages.success(request, dashboard_labels(request.LANGUAGE_CODE)['saved'])
     else:
         query['invalid'] = '1'
     url = reverse('ai_dashboard')

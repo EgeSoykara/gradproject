@@ -1,0 +1,26 @@
+{% if savings_data.line %}
+  <p class="dashboard-explainer">{{ t.savings_explain }}</p>
+  {% if savings_data.monthly is not None or savings_data.window %}
+    <p class="bridge-muted">
+      {% if savings_data.monthly is not None %}{{ t.monthly }} · <strong>{{ savings_data.monthly|floatformat:'2g' }}</strong>{% endif %}
+      {% if savings_data.window %}<br>{{ savings_data.window.start }} – {{ savings_data.window.end }}{% endif %}
+    </p>
+  {% endif %}
+  {% include 'dashboard/_chart.html' with figure=savings_data.line chart_id='bridge-savings' label=t.savings %}
+  {% if savings_data.last_point.portfolio_usd is not None %}
+    <div class="dashboard-observation">
+      <strong>{{ t.simulation_result }}</strong>
+      <span>{{ t.sim_value }} <b>{{ savings_data.last_point.portfolio_usd|floatformat:'2g' }}</b></span>
+      <span>{{ t.sim_invested }} <b>{{ savings_data.last_point.invested_usd|floatformat:'2g' }}</b></span>
+    </div>
+  {% endif %}
+{% else %}<p class="bridge-muted">{{ t.savings_missing }}</p>{% endif %}
+{% if level == 'expert' and savings_data.source_matches %}{% include 'dashboard/_copy.html' with block=savings_data %}{% endif %}
+{% include 'dashboard/_disclaimer.html' with text=savings_data.disclaimer %}
+{% if level == 'expert' and stay %}
+  <div class="bridge-section">
+    <h3>{{ t.stay }}</h3>
+    {% include 'dashboard/_copy.html' with block=stay %}
+    {% include 'dashboard/_disclaimer.html' with text=stay.disclaimer %}
+  </div>
+{% endif %}

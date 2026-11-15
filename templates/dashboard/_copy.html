@@ -1,2 +1,13 @@
-{% if block.summary %}<p class="source-copy">{{ block.summary }}</p>{% endif %}
-{% if level == 'expert' and block.details %}<p class="source-copy analysis-details">{{ block.details }}</p>{% endif %}
+{% if level == 'expert' and block.summary or level == 'expert' and block.details %}
+  <details class="dashboard-secondary">
+    <summary>{{ t.source_notes }}</summary>
+    <div class="dashboard-secondary-body">
+      {% if block.summary %}<p class="source-copy">{{ block.summary }}</p>{% endif %}
+      {% if block.details %}
+        <ul class="dashboard-method-list">
+          {% for line in block.details %}<li>{{ line }}</li>{% endfor %}
+        </ul>
+      {% endif %}
+    </div>
+  </details>
+{% endif %}

@@ -1,104 +1,92 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block title %}{{ t.title }} · PortfolioAI{% endblock %}
-{% block styles %}<link rel="stylesheet" href="{% static 'dashboard.css' %}">{% endblock %}
+{% block styles %}<link rel="stylesheet" href="{% static 'dashboard.css' %}?v=score-source">{% endblock %}
 {% block content %}
-<div class="bridge-dashboard">
-  <div class="bridge-heading">
-    <div><h1>{{ t.title }}</h1>{% if mock %}<p>{{ t.static_data }}</p>{% endif %}</div>
-    <span class="pill {% if mock %}amber{% else %}green{% endif %}">{% if mock %}{{ t.sample }}{% else %}{{ t.connected }}{% endif %}</span>
-  </div>
-  <form class="bridge-controls panel" method="post" action="{% url 'dashboard_preferences' %}">
-    {% csrf_token %}
-    {% if first_visit %}<p class="profile-guide"><strong>{{ t.choose_profile }}</strong> {{ t.profile_guide }}</p>{% endif %}
-    <label>{{ t.currency }}
-      <select name="currency">
-        <option {% if currency == 'TRY' %}selected{% endif %}>TRY</option>
-        <option {% if currency == 'USD' %}selected{% endif %}>USD</option>
-        <option {% if currency == 'EUR' %}selected{% endif %}>EUR</option>
-        <option {% if currency == 'GBP' %}selected{% endif %}>GBP</option>
-      </select>
-    </label>
-    <label>{{ t.profile }}
-      <select name="profile">
-        <option value="conservative" {% if profile == 'conservative' %}selected{% endif %}>{{ t.conservative }}</option>
-        <option value="balanced" {% if profile == 'balanced' %}selected{% endif %}>{{ t.balanced }}</option>
-        <option value="aggressive" {% if profile == 'aggressive' %}selected{% endif %}>{{ t.aggressive }}</option>
-      </select>
-    </label>
-    <label>{{ t.level }}
-      <select name="level"><option value="beginner" {% if level == 'beginner' %}selected{% endif %}>{{ t.beginner }}</option><option value="expert" {% if level == 'expert' %}selected{% endif %}>{{ t.expert }}</option></select>
-    </label>
-    {% if mock %}
-      <input type="hidden" name="monthly_contribution" value="{{ monthly_contribution|stringformat:'s' }}">
-      {% if fixtures|length > 1 %}
-      <label>{{ t.fixture }}<select name="fixture">{% for code, filename in fixtures %}<option value="{{ code }}" {% if code == fixture %}selected{% endif %}>{{ filename }}</option>{% endfor %}</select></label>
-      {% endif %}
-    {% else %}
-      <label>{{ t.monthly }}<input type="number" min="0" step="0.01" required name="monthly_contribution" value="{{ monthly_contribution|stringformat:'s' }}"></label>
-    {% endif %}
-    <button class="button">{{ t.apply }}</button>
-  </form>
+<div class="bridge-dashboard" data-level="{{ level }}" data-profile="{{ profile }}">
+  <header class="bridge-heading">
+    <div class="dashboard-title">
+      <h1>{{ t.title }}</h1>
+      <span class="dashboard-source {% if mock %}dashboard-source-sample{% endif %}">
+        {% if mock %}{{ t.sample }}{% else %}{{ t.connected }}{% endif %}
+      </span>
+      <p class="dashboard-active-settings">{{ level_label }} <span aria-hidden="true">·</span> {{ profile_label }} <span aria-hidden="true">·</span> {{ currency }}</p>
+    </div>
+    <details class="dashboard-preferences"{% if query_error or data_unavailable %} open{% endif %}>
+      <summary>
+        <svg aria-hidden="true"><use href="#i-settings"/></svg>
+        {{ t.preferences }}
+      </summary>
+      <div class="panel dashboard-preferences-body">
+        {% include 'dashboard/_preferences.html' %}
+      </div>
+    </details>
+  </header>
 
   {% if query_error %}<p class="message error" role="alert">{{ t.invalid }}</p>{% endif %}
   {% if data_unavailable %}
     <p class="panel" role="status">{{ t.unavailable }}</p>
   {% else %}
     {{ payload|json_script:'dashboard-payload' }}
-    {% include 'dashboard/_portfolio.html' with p=portfolio_data %}
-    {% if stay %}
-    <section class="panel bridge-card stay-card">
-      <h2>{{ t.stay }}</h2>
-      {% include 'dashboard/_copy.html' with block=stay %}
-      {% include 'dashboard/_disclaimer.html' with text=stay.disclaimer %}
+    <section class="dashboard-overview" aria-label="{{ t.overview }}">
+      {% include 'dashboard/_portfolio.html' with p=portfolio_data %}
     </section>
+
+    {% if highlights %}
+      <section class="panel dashboard-highlights" aria-labelledby="dashboard-highlights-title">
+        <div class="dashboard-highlights-heading">
+          <h2 id="dashboard-highlights-title">{{ t.highlights }}</h2>
+          <a href="#dashboard-comments">{{ t.all_comments }} <span aria-hidden="true">→</span></a>
+        </div>
+        <div class="dashboard-highlights-grid">
+          {% for item in highlights %}
+            <article class="dashboard-highlight {% if item.severity == 'attention' %}dashboard-highlight-attention{% endif %}">
+              <strong>{% if item.title %}{{ item.title }}{% elif item.severity == 'attention' %}{{ t.attention }}{% else %}{{ t.info }}{% endif %}</strong>
+              <p>{{ item.preview }}</p>
+              {% include 'dashboard/_disclaimer.html' with text=item.disclaimer %}
+            </article>
+          {% endfor %}
+        </div>
+        {% include 'dashboard/_disclaimer.html' with text=comments_data.disclaimer %}
+      </section>
     {% endif %}
-    <section class="panel bridge-card">
-      <h2>{{ t.savings }}</h2>
-      {% include 'dashboard/_copy.html' with block=savings_data %}
-      {% if savings_data.line %}
-        {% if savings_data.window %}<p class="bridge-muted">{{ savings_data.window.start }} – {{ savings_data.window.end }}</p>{% endif %}
-        {% if savings_data.monthly is not None %}<p class="bridge-muted">{{ t.monthly }} · <strong>{{ savings_data.monthly|floatformat:'2g' }}</strong></p>{% endif %}
-        {% include 'dashboard/_chart.html' with figure=savings_data.line chart_id='bridge-savings' label=t.savings %}
-      {% else %}<p class="bridge-muted">{{ t.missing }}</p>{% endif %}
-      {% include 'dashboard/_disclaimer.html' with text=savings_data.disclaimer %}
-    </section>
-    {% include 'dashboard/_robustness.html' with r=robustness_data %}
-    <section class="panel bridge-card">
-      <h2>{{ t.comments }}</h2>
-      {% include 'dashboard/_copy.html' with block=comments_data %}
-      <div class="bridge-list">
-      {% for item in comments_data.items %}
-        <article class="bridge-comment {% if item.severity == 'attention' %}attention{% endif %}">
-          <strong>{% if item.title %}{{ item.title }}{% elif item.severity == 'attention' %}{{ t.attention }}{% else %}{{ t.info }}{% endif %}</strong>
-          <p class="source-copy">{{ item.display }}</p>
-          {% include 'dashboard/_disclaimer.html' with text=item.disclaimer %}
-        </article>
-      {% empty %}<p class="bridge-muted">{{ t.missing }}</p>{% endfor %}
-      </div>
-      {% include 'dashboard/_disclaimer.html' with text=comments_data.disclaimer %}
-    </section>
-    <section class="panel bridge-card">
-      <h2>{{ t.news }}</h2>
-      {% include 'dashboard/_copy.html' with block=news_data %}
-      {% if news_data.status %}<p class="bridge-muted">{{ news_data.status }}</p>{% endif %}
-      {% if news_data.counts %}<div class="bridge-inline">{% for label, count in news_data.counts %}{% if count is not None %}<span>{{ label }} · <strong>{{ count }}</strong></span>{% endif %}{% endfor %}</div>{% endif %}
-      <div class="bridge-list">
-      {% for theme in news_data.themes %}
-        <article class="bridge-comment">
-          <h3>{{ theme.name }}</h3>{% if theme.status %}<p class="bridge-muted">{{ theme.status }}</p>{% endif %}
-          {% if not theme.insufficient %}
-            <div class="bridge-inline">{% for label, count in theme.counts %}{% if count is not None %}<span>{{ label }} · <strong>{{ count }}</strong></span>{% endif %}{% endfor %}</div>
-            {% with headline=theme.headline %}{% if headline.title or headline.text %}<p class="source-copy">{% firstof headline.title headline.text %}</p>{% endif %}
-            {% if headline.source or headline.date or headline.published_at %}<small class="bridge-muted">{{ headline.source }} {% firstof headline.date headline.published_at %}</small>{% endif %}{% endwith %}
-          {% endif %}
-        </article>
-      {% empty %}<p class="bridge-muted">{{ t.missing }}</p>{% endfor %}
-      </div>
-      {% include 'dashboard/_disclaimer.html' with text=news_data.disclaimer %}
-    </section>
-    {% include 'dashboard/_rebalance.html' with r=rebalancing_data %}
-    {% include 'dashboard/_funds.html' %}
+
+    <div class="dashboard-sections">
+      <section aria-labelledby="dashboard-analysis-title">
+        <h2 id="dashboard-analysis-title">{{ t.analysis_sections }}</h2>
+        <details class="dashboard-detail" id="dashboard-risk">
+          {% include 'dashboard/_section_summary.html' with title=t.robustness hint=t.robustness_hint icon='i-chart' %}
+          <div class="dashboard-detail-body bridge-card">{% include 'dashboard/_robustness.html' with r=robustness_data %}</div>
+        </details>
+        <details class="dashboard-detail" id="dashboard-comments">
+          {% include 'dashboard/_section_summary.html' with title=t.comments hint=t.comments_hint icon='i-spark' %}
+          <div class="dashboard-detail-body bridge-card">{% include 'dashboard/_comments.html' %}</div>
+        </details>
+        <details class="dashboard-detail" id="dashboard-news">
+          {% include 'dashboard/_section_summary.html' with title=t.news hint=t.news_hint icon='i-news' %}
+          <div class="dashboard-detail-body bridge-card">{% include 'dashboard/_news.html' %}</div>
+        </details>
+        <details class="dashboard-detail" id="dashboard-funds">
+          {% include 'dashboard/_section_summary.html' with title=t.funds hint=t.funds_hint icon='i-grid' %}
+          <div class="dashboard-detail-body bridge-card">{% include 'dashboard/_funds.html' %}</div>
+        </details>
+      </section>
+      <section aria-labelledby="dashboard-planning-title">
+        <h2 id="dashboard-planning-title">{{ t.planning_sections }}</h2>
+        <details class="dashboard-detail" id="dashboard-value">
+          {% include 'dashboard/_section_summary.html' with title=t.portfolio_details hint=t.value_hint icon='i-wallet' %}
+          <div class="dashboard-detail-body bridge-card">{% include 'dashboard/_portfolio_details.html' with p=portfolio_data %}</div>
+        </details>
+        <details class="dashboard-detail" id="dashboard-savings">
+          {% include 'dashboard/_section_summary.html' with title=t.savings hint=t.savings_hint icon='i-chart' %}
+          <div class="dashboard-detail-body bridge-card">{% include 'dashboard/_savings.html' %}</div>
+        </details>
+        <details class="dashboard-detail" id="dashboard-rebalance">
+          {% include 'dashboard/_section_summary.html' with title=t.rebalance hint=t.rebalance_hint icon='i-arrows' %}
+          <div class="dashboard-detail-body bridge-card">{% include 'dashboard/_rebalance.html' with r=rebalancing_data %}</div>
+        </details>
+      </section>
+    </div>
   {% endif %}
 </div>
 {% endblock %}

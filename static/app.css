@@ -8,5 +8,8 @@
 
 .hero-metric>div{position:relative;z-index:1}.hero-metric:after{z-index:0}
 .legal-footer { color: #53655d; line-height: 1.5; font-size: 11px; justify-content: flex-start; }
+.resilience-card p { color: #496154; }
+.resilience-card .risk-score-source { font-weight: 650; }
+.resilience-card p a { color: #176549; text-decoration: underline; text-underline-offset: 2px; }
 body > .legal-footer { padding: 18px max(16px, 4vw); margin: 0; }
 @media (max-width: 380px) { .topbar .workspace-switch select { max-width: 102px; } .topbar-right > .pill { display: none; } }

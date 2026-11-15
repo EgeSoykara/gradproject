@@ -1195,3 +1195,18 @@ msgstr "＋ Yeni not"
 
 msgid "＋ New portfolio"
 msgstr "＋ Yeni portföy"
+
+msgid "Volatility and allocation score"
+msgstr "Oynaklık ve dağılım puanı"
+
+msgid "Synthetic demo prices"
+msgstr "Sentetik demo fiyatları"
+
+msgid "Recorded market prices"
+msgstr "Kayıtlı piyasa fiyatları"
+
+msgid "Based on daily price swings, the largest past decline and how evenly your holdings are spread."
+msgstr "Günlük fiyat dalgalanmaları, geçmişteki en büyük düşüş ve varlıkların portföye ne kadar dengeli dağıldığı hesaba katılır."
+
+msgid "The Portfolio Dashboard has a four-part robustness score that includes crisis scenarios and purchasing power."
+msgstr "Portföy Paneli, kriz senaryolarını ve alım gücünü de içeren dört bileşenli bir sağlamlık puanı gösterir."

@@ -4,12 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}{% translate 'PortfolioAI · Investment workspace' %}{% endblock %}</title>
-  <link rel="stylesheet" href="{% static 'app.css' %}">
+  <link rel="stylesheet" href="{% static 'app.css' %}?v=score-source">
   <link rel="stylesheet" href="{% static 'language-switch.css' %}">
   {% block styles %}{% endblock %}
   <script src="{% static 'vendor/plotly.min.js' %}" defer></script>
   {% if site_language == 'tr' %}<script src="{% static 'vendor/plotly-locale-tr.js' %}" defer></script>{% endif %}
-  <script src="{% static 'app.js' %}" defer></script>
+  <script src="{% static 'app.js' %}?v=dashboard-details" defer></script>
 </head>
 <body data-chart-error="{% translate 'The chart could not be loaded. Refresh the page to try again.' %}"
   data-grams-label="{% translate 'Grams:' %}" data-units-label="{% translate 'Units:' %}"

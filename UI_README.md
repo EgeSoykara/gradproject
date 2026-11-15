@@ -16,7 +16,7 @@ Use the TR / EN control in the top bar to change the language of the entire inte
 
 ## Data sources
 
-The authenticated page and `GET /api/dashboard/?lang=tr&currency=TRY&profile=balanced` use the same adapter. `USE_MOCK_DASHBOARD=true` is the default. The API returns the example as supplied. The page formats the selected currency from the values in the file and selects localized text where available. When a file contains a single text version it displays that text verbatim. The language and profile controls do not regenerate offline results.
+The authenticated page and `GET /api/dashboard/?lang=tr&currency=TRY&profile=balanced` use the same adapter. `USE_MOCK_DASHBOARD=true` is the default. The API returns the example as supplied. The page displays the selected currency and compares the example portfolio with dated category weights for the selected profile from `dashboard/mock/profile_reference.json`. The example's historical calculations remain fixed. Settings save the display level, currency and risk profile to the account and the selected example to the session.
 
 | Card | Payload field |
 | --- | --- |
