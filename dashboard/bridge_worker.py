@@ -18,8 +18,9 @@ def main():
             if not (Path('data/snapshot') / f'{symbol}.parquet').is_file():
                 raise ValueError('An asset does not have analysis data.')
         for holding in arguments['holdings']:
-            prices = load_price_series(holding['symbol']).sort_index()
-            holding['price'] = float(prices.iloc[-1])
+            if 'price' not in holding:
+                prices = load_price_series(holding['symbol']).sort_index()
+                holding['price'] = float(prices.iloc[-1])
         payload = get_dashboard(**arguments, ledger_cash_flows=True)
     json.dump(payload, sys.stdout, ensure_ascii=False, allow_nan=False)
 

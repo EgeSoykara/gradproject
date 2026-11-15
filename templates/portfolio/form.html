@@ -8,6 +8,12 @@
       {{ form.non_field_errors }}
       {% for field in form %}
         {% if field.name == 'asset' %}
+          {% if no_priced_assets %}
+            <p id="missing-trade-prices"{% if form.kind.value != 'buy' and form.kind.value != 'sell' %} hidden{% endif %}>
+              {% translate "This portfolio has no assets with price history yet. A local administrator can import market prices." %}
+              <a class="text-link" href="{% url 'settings' %}">{% translate "Manage data" %}</a>
+            </p>
+          {% endif %}
           <p id="asset-search" hidden><label for="asset-query">{% translate "Find a fund or metal" %}</label><input id="asset-query" type="search" autocomplete="off" placeholder="{% translate "Search by code or name" %}" aria-controls="id_asset"><span class="helptext" role="status"></span></p>
         {% endif %}
         {{ field.errors }}

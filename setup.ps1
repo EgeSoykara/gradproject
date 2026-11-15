@@ -25,7 +25,7 @@ if ($EngineZip) {
     if ($LASTEXITCODE -ne 0) { throw 'Fund catalog import failed.' }
     & $python manage.py seed_engine_demo
     if ($LASTEXITCODE -ne 0) { throw 'Archive portfolio setup failed.' }
-    Write-Host 'Ready. Run .\start.ps1 -Engine and select the archive portfolio after signing in as demo.'
+    Write-Host 'Ready. Run .\start.ps1 and select the archive portfolio after signing in as demo.'
     return
 }
 & '.venv/Scripts/python.exe' manage.py train_models --dataset demo

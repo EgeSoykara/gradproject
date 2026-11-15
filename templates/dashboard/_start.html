@@ -1,0 +1,21 @@
+<section class="panel dashboard-start" aria-labelledby="dashboard-start-title">
+  <h2 id="dashboard-start-title">{{ t.welcome }}</h2>
+  <div class="dashboard-start-options">
+    <form method="post" action="{% url 'demo_load' %}" class="dashboard-start-choice">
+      {% csrf_token %}
+      <input type="hidden" name="from_dashboard" value="1">
+      <div class="dashboard-detail-icon" aria-hidden="true"><svg><use href="#i-grid"/></svg></div>
+      <p>{{ t.explore_demo_help }}</p>
+      <button class="button secondary" type="submit">{{ t.explore_demo }}</button>
+    </form>
+    <div class="dashboard-start-choice">
+      <div class="dashboard-detail-icon" aria-hidden="true"><svg><use href="#i-wallet"/></svg></div>
+      <p>{{ t.create_portfolio_help }}</p>
+      {% if selected_workspace %}
+        <a class="button" href="{% url 'transaction_new' %}?kind=deposit&amp;onboarding=1">{{ t.add_cash }}</a>
+      {% else %}
+        <a class="button" href="{% url 'portfolio_create' %}?onboarding=1">{{ t.create_portfolio }}</a>
+      {% endif %}
+    </div>
+  </div>
+</section>

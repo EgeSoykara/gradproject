@@ -36,7 +36,9 @@ class Command(BaseCommand):
                 raise CommandError(f'Archive data unavailable for {code}.') from exc
             trades.append((asset, amount, Decimal(str(price)).quantize(Decimal('0.00000001'))))
 
-        portfolio = Portfolio.objects.create(user=user, name='Arşiv veri örneği', dataset='live')
+        portfolio = Portfolio.objects.create(
+            user=user, name='Arşiv veri örneği', dataset='live', archive_prices=True,
+        )
         save_transaction(Transaction(portfolio=portfolio, kind='deposit', date=start, price=100000))
         for asset, amount, price in trades:
             save_transaction(

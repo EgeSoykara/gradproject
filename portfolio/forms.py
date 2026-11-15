@@ -4,9 +4,11 @@ from decimal import ROUND_DOWN, Decimal, InvalidOperation
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
+from django.db.models import Exists, OuterRef, Q
 from django.utils.translation import gettext_lazy as _
 
-from .models import Asset, Note, Portfolio, Transaction
+from .models import Asset, Note, Portfolio, Price, Transaction
+from .services.archive import METAL_SYMBOLS, archive_available, archive_path
 
 
 class RegisterForm(UserCreationForm):
@@ -49,13 +51,22 @@ class TransactionForm(forms.ModelForm):
         self.fields['quantity'].required = False
         if not self.instance.pk:
             self.initial.setdefault('quantity', None)
-        self.fields['asset'].queryset = Asset.objects.exclude(kind='benchmark').order_by(
-            'kind', 'symbol'
-        )
-        if portfolio and portfolio.dataset == 'live':
-            self.fields['asset'].queryset = self.fields['asset'].queryset.exclude(
-                symbol__startswith='DEMO-'
-            )
+        assets = Asset.objects.exclude(kind='benchmark').order_by('kind', 'symbol')
+        if portfolio:
+            recorded = portfolio.transactions.exclude(asset__isnull=True).values('asset_id')
+            if portfolio.archive_prices:
+                available_symbols = set()
+                for file in archive_path('USDTRY').parent.glob('*.parquet'):
+                    if file.stem.isascii() and file.stem.isalnum():
+                        available_symbols.add(file.stem)
+                available_symbols.update(symbol for symbol, code in METAL_SYMBOLS.items() if code in available_symbols)
+                assets = assets.filter(Q(symbol__in=available_symbols, currency='TRY') | Q(pk__in=recorded))
+            else:
+                priced = Price.objects.filter(dataset=portfolio.dataset, asset_id=OuterRef('pk'))
+                assets = assets.filter(Exists(priced) | Q(pk__in=recorded))
+            if portfolio.dataset == 'live':
+                assets = assets.exclude(symbol__startswith='DEMO-')
+        self.fields['asset'].queryset = assets
         self.fields['date'].initial = date.today
 
     def clean(self):
@@ -108,8 +119,13 @@ class NoteForm(forms.ModelForm):
 class PortfolioForm(forms.ModelForm):
     class Meta:
         model = Portfolio
-        fields = ['name']
-        labels = {'name': _('Name')}
+        fields = ['name', 'archive_prices']
+        labels = {'name': _('Name'), 'archive_prices': _('Use archive prices and analysis engine')}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not archive_available():
+            self.fields.pop('archive_prices')
 
 
 class RangeForm(forms.Form):

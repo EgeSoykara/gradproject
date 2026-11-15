@@ -10,13 +10,15 @@ python -m venv .venv
 .\.venv\Scripts\python.exe manage.py runserver 127.0.0.1:8000
 ```
 
-Open http://127.0.0.1:8000/dashboard/ and register or sign in with the example account printed during setup. The new dashboard also opens after sign-in. The existing overview continues to use the local ledger. Model training is optional for the existing AI Insights lab and is unnecessary for this dashboard.
+Open http://127.0.0.1:8000/dashboard/ and register or sign in with the example account printed during setup. The dashboard also opens after sign-in. The overview uses the local ledger. In Expert mode, connected portfolios can show correlations from the same archive price series used for the dashboard. Expert tools also links to Model Lab for saved forecasts and holdout results. Model training is optional for this lab.
 
 Use the TR / EN control in the top bar to change the language of the entire interface. The selected language is saved on the signed-in account and also applies to the analysis model's localized content when available.
 
 ## Data sources
 
-The authenticated page and `GET /api/dashboard/?lang=tr&currency=TRY&profile=balanced` use the same adapter. `USE_MOCK_DASHBOARD=true` is the default. The API returns the example as supplied. The page displays the selected currency and compares the example portfolio with dated category weights for the selected profile from `dashboard/mock/profile_reference.json`. The example's historical calculations remain fixed. Settings save the display level, currency and risk profile to the account and the selected example to the session.
+The dashboard and `GET /api/dashboard/?lang=tr&currency=TRY&profile=balanced` use the active portfolio by default. New accounts can start a personal portfolio or open a learning portfolio from the dashboard. Overview, holdings and the dashboard share the portfolio's valuation source. Portfolios connected to archive prices also show the engine's analytical cards when available.
+
+The learning portfolio links to a separate prepared analysis example. An explicit `?fixture=example` or `?fixture=persona_1` opens a prepared dashboard on either the page or API. The API returns the original example data. The page compares the example with dated category weights from `dashboard/mock/profile_reference.json`. Display preferences are saved to the account, and the last example is remembered for reopening.
 
 | Card | Payload field |
 | --- | --- |
@@ -39,10 +41,10 @@ Download `EgeSpecial.zip` from the person who shared the analysis package. With 
 
 ```powershell
 .\setup.ps1 -EngineZip "C:\path\to\EgeSpecial.zip"
-.\start.ps1 -Engine
+.\start.ps1
 ```
 
-The installer extracts `PortfolioAI_Ege` beside the Django folder, applies the compatibility patch, installs dependencies, copies the persona files and prepares an archive example. Sign in as `demo` and select **Arşiv veri örneği** in the portfolio menu.
+The installer extracts `PortfolioAI_Ege` beside the Django folder, applies the compatibility patch, installs dependencies, copies the persona files and prepares an archive example. Sign in as `demo` and select **Arşiv veri örneği** in the portfolio menu. New market portfolios can also select archive prices at creation when the engine is installed.
 
 The compatibility patch adapts the savings tracker to use the Django ledger's external cash flows and exposes the sentiment breakdown for each theme. The bridge keeps its original cash-flow behavior for callers using its original signature.
 

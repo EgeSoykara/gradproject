@@ -2,7 +2,6 @@ import logging
 from urllib.parse import urlencode
 
 from django import forms
-from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
@@ -17,13 +16,15 @@ from portfolio.models import CURRENCIES
 from portfolio.services.valuation import MissingData
 
 from .models import LANGUAGES, LEVELS, PROFILES, DashboardPreferences
-from .presentation import dashboard_context, dashboard_labels
+from .presentation import correlation_context, dashboard_context, dashboard_labels
 from .services import (
     DEFAULT_FIXTURE,
     DashboardUnavailable,
+    archive_correlation,
     load_dashboard,
     mock_choices,
     mock_profile_reference,
+    workspace_payload,
 )
 
 logger = logging.getLogger(__name__)
@@ -46,26 +47,24 @@ class DashboardQuery(forms.Form):
 
     def __init__(self, data):
         super().__init__(data)
-        if settings.USE_MOCK_DASHBOARD:
-            self.fields['fixture'] = forms.ChoiceField(choices=mock_choices(), required=False)
+        self.fields['fixture'] = forms.ChoiceField(choices=mock_choices(), required=False)
 
 
-def read_payload(request, preferences, params):
-    return load_dashboard(
-        request.user,
-        params.get('lang') or request.LANGUAGE_CODE,
-        currency=params.get('currency') or preferences.currency,
-        profile=params.get('profile') or preferences.profile,
-        portfolio=workspace(request).get('active_portfolio'),
-        fixture=selected_fixture(request, params.get('fixture')),
-    )
+def read_payload(request, preferences, params, portfolio):
+    lang = params.get('lang') or request.LANGUAGE_CODE
+    fixture = params.get('fixture')
+    if fixture:
+        return load_dashboard(request.user, lang, fixture=fixture), None, True
+    if portfolio is None:
+        raise DashboardUnavailable('Select or create a portfolio.')
+    return workspace_payload(portfolio, params.get('currency') or preferences.currency,
+                             params.get('profile') or preferences.profile, lang)
 
 
 def selected_fixture(request, fixture=None):
-    if settings.USE_MOCK_DASHBOARD:
-        choice = fixture or request.session.get('dashboard_fixture')
-        if choice in dict(mock_choices()):
-            return choice
+    choice = fixture or request.session.get('dashboard_fixture')
+    if choice in dict(mock_choices()):
+        return choice
     return DEFAULT_FIXTURE
 
 
@@ -78,6 +77,9 @@ def dashboard(request):
     query = DashboardQuery(request.GET)
     valid_query = query.is_valid()
     params = query.cleaned_data if valid_query else {}
+    portfolio = workspace(request).get('active_portfolio')
+    mock = bool(params.get('fixture'))
+    has_transactions = bool(portfolio and portfolio.transactions.exists())
     context = {
         'page': 'ai_dashboard',
         'language': params.get('lang') or request.LANGUAGE_CODE,
@@ -85,9 +87,13 @@ def dashboard(request):
         'profile': params.get('profile') or preferences.profile,
         'level': params.get('level') or preferences.level,
         'monthly_contribution': preferences.monthly_contribution,
-        'mock': settings.USE_MOCK_DASHBOARD,
+        'mock': mock,
+        'onboarding': not mock and not has_transactions,
+        'selected_workspace': bool(portfolio and request.session.get('portfolio_id') == portfolio.pk),
+        'uses_archive': bool(portfolio and portfolio.archive_prices),
+        'demo_workspace': bool(portfolio and portfolio.dataset == 'demo'),
         'fixture': selected_fixture(request, params.get('fixture')),
-        'fixtures': mock_choices() if settings.USE_MOCK_DASHBOARD else [],
+        'fixtures': mock_choices(),
         'query_error': not valid_query or request.GET.get('invalid') == '1',
     }
     labels = dashboard_labels(context['language'])
@@ -100,20 +106,28 @@ def dashboard(request):
         context['robustness_source'] = f"{fixture_label} · {labels['robustness_archive']}"
     context['level_options'] = [(code, labels[code], labels[f'{code}_help']) for code, _ in LEVELS]
     context['profile_options'] = [(code, labels[code], labels[f'{code}_help']) for code, _ in PROFILES]
-    try:
-        payload = read_payload(request, preferences, params)
-    except (DashboardUnavailable, MissingData):
-        logger.info('Dashboard data unavailable', exc_info=True)
-        context['data_unavailable'] = True
-    else:
-        reference = mock_profile_reference(context['profile']) if context['mock'] else None
-        context.update(dashboard_context(
-            payload, context['language'], context['currency'],
-            profile=context['profile'], level=context['level'], reference=reference,
-        ))
     if context['language'] != request.LANGUAGE_CODE:
         translation.activate(context['language'])
         request.LANGUAGE_CODE = context['language']
+    if not context['onboarding']:
+        try:
+            payload, snap, full_analysis = read_payload(request, preferences, params, portfolio)
+        except (DashboardUnavailable, MissingData) as exc:
+            logger.info('Dashboard data unavailable', exc_info=True)
+            context.update(data_unavailable=True, data_error=str(exc) if isinstance(exc, MissingData) else '')
+        else:
+            reference = mock_profile_reference(context['profile']) if mock else None
+            context.update(dashboard_context(
+                payload, context['language'], context['currency'],
+                profile=context['profile'], level=context['level'], reference=reference,
+            ))
+            context.update(snap=snap, full_analysis=full_analysis)
+            if not mock and snap and not snap['holdings']:
+                context['first_purchase'] = not portfolio.transactions.filter(kind='buy').exists()
+            if context['level'] == 'expert' and full_analysis and not mock:
+                result = archive_correlation(payload)
+                if result is not None:
+                    context['correlation_data'] = correlation_context(result)
     return render(request, 'dashboard/index.html', context)
 
 
@@ -123,7 +137,7 @@ def preferences(request):
     current = request.dashboard_preferences
     form = PreferenceForm(request.POST, instance=current)
     fixture = request.POST.get('fixture')
-    query = {'fixture': fixture} if settings.USE_MOCK_DASHBOARD and fixture in dict(mock_choices()) else {}
+    query = {'fixture': fixture} if fixture in dict(mock_choices()) else {}
     if form.is_valid():
         DashboardPreferences.objects.update_or_create(
             user=request.user, defaults=form.cleaned_data,
@@ -148,7 +162,8 @@ def dashboard_api(request):
         return JsonResponse({'errors': query.errors.get_json_data()}, status=400)
     preferences = request.dashboard_preferences
     try:
-        payload = read_payload(request, preferences or DashboardPreferences(), query.cleaned_data)
+        portfolio = workspace(request).get('active_portfolio')
+        payload, _, _ = read_payload(request, preferences or DashboardPreferences(), query.cleaned_data, portfolio)
     except (DashboardUnavailable, MissingData):
         logger.info('Dashboard data unavailable', exc_info=True)
         return JsonResponse({'error': 'Dashboard data is unavailable.'}, status=503)

@@ -15,14 +15,14 @@ cd gradproject
 
 Requires Python 3.13 for the tested configuration. On later runs, use only `.\start.ps1`. Generated local data and model files are not included in the repository.
 
-If you have the `EgeSpecial.zip` analysis package, install the full dashboard with `.\setup.ps1 -EngineZip "C:\path\to\EgeSpecial.zip"` and start it with `.\start.ps1 -Engine`. [Engine setup and example portfolio](UI_README.md#bridge-integration).
+If you have the `EgeSpecial.zip` analysis package, install the full dashboard with `.\setup.ps1 -EngineZip "C:\path\to\EgeSpecial.zip"` and start it with `.\start.ps1`. [Engine setup and example portfolio](UI_README.md#bridge-integration).
 
 Open **http://127.0.0.1:8000**. Sample account:
 
 - Username: `demo`
 - Password: `PortfolioDemo!2026`
 
-This account is local, non-admin and intended only for sample data. Alternatively, create an account from the sign-in page, then choose **Explore demo portfolio**. A new account starts with a separate empty market-data portfolio.
+This account is local, non-admin and intended only for sample data. Alternatively, create an account from the sign-in page. The dashboard offers a learning portfolio or guides you through naming a personal portfolio, adding cash and recording a purchase.
 
 If PowerShell script execution is restricted, run the interpreter directly:
 

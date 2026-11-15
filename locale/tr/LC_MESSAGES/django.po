@@ -1196,17 +1196,41 @@ msgstr "＋ Yeni not"
 msgid "＋ New portfolio"
 msgstr "＋ Yeni portföy"
 
-msgid "Volatility and allocation score"
-msgstr "Oynaklık ve dağılım puanı"
-
 msgid "Synthetic demo prices"
 msgstr "Sentetik demo fiyatları"
 
 msgid "Recorded market prices"
 msgstr "Kayıtlı piyasa fiyatları"
 
-msgid "Based on daily price swings, the largest past decline and how evenly your holdings are spread."
-msgstr "Günlük fiyat dalgalanmaları, geçmişteki en büyük düşüş ve varlıkların portföye ne kadar dengeli dağıldığı hesaba katılır."
+msgid "Model Lab"
+msgstr "Model Laboratuvarı"
 
-msgid "The Portfolio Dashboard has a four-part robustness score that includes crisis scenarios and purchasing power."
-msgstr "Portföy Paneli, kriz senaryolarını ve alım gücünü de içeren dört bileşenli bir sağlamlık puanı gösterir."
+msgid "Inspect stored price forecasts and how the model performed on historical data."
+msgstr "Kayıtlı fiyat tahminlerini ve modelin geçmiş verilerdeki performansını incele."
+
+msgid "Back to the dashboard"
+msgstr "Panele dön"
+
+msgid "Forecasts and example capacities based on available cash"
+msgstr "Tahminler ve kullanılabilir nakde göre örnek işlem büyüklükleri"
+
+msgid "Model runs exist. Displaying candidates requires usable prices for the selected portfolio and currency."
+msgstr "Kayıtlı tahminler var. Adayları göstermek için seçili portföy ve para birimine ait fiyat verileri gerekiyor."
+
+msgid "Find portfolio robustness, fund outlooks and savings analysis in the portfolio dashboard."
+msgstr "Portföy sağlamlığını, fon görünümlerini ve birikim analizini Portföy Paneli’nde incele."
+
+msgid "Open portfolio dashboard"
+msgstr "Portföy Paneli’ni aç"
+
+msgid "Cash amount:"
+msgstr "Nakit tutarı:"
+
+msgid "Unit price:"
+msgstr "Birim fiyat:"
+
+msgid "Use archive prices and analysis engine"
+msgstr "Arşiv fiyatlarını ve analiz motorunu kullan"
+
+msgid "This portfolio has no assets with price history yet. A local administrator can import market prices."
+msgstr "Bu portföye ait fiyat geçmişi bulunan varlık yok. Ortak piyasa fiyatlarını yerel yönetici içe aktarabilir."

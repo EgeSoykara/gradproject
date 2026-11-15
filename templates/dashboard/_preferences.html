@@ -11,7 +11,7 @@
       {% endfor %}
     </div>
   </fieldset>
-  <fieldset class="dashboard-option-group">
+  {% if mock or uses_archive %}<fieldset class="dashboard-option-group">
     <legend>{{ t.profile }}</legend>
     <div class="dashboard-options dashboard-options-profiles">
       {% for code, title, help in profile_options %}
@@ -21,7 +21,7 @@
         </label>
       {% endfor %}
     </div>
-  </fieldset>
+  </fieldset>{% else %}<input type="hidden" name="profile" value="{{ profile }}">{% endif %}
   <div class="bridge-controls">
     <label>{{ t.currency }}
       <select name="currency">
@@ -42,10 +42,11 @@
           </select>
         </label>
       {% endif %}
-    {% else %}
+    {% elif uses_archive %}
       <label>{{ t.monthly }}
         <input type="number" min="0" max="999999999999.99" step="0.01" required name="monthly_contribution" value="{{ monthly_contribution|stringformat:'s' }}">
       </label>
+    {% else %}<input type="hidden" name="monthly_contribution" value="{{ monthly_contribution|stringformat:'s' }}">
     {% endif %}
     <button class="button" type="submit">{{ t.apply }}</button>
   </div>

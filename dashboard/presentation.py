@@ -9,6 +9,24 @@ TEXT = {
     'portfolio': ('Portföy', 'Portfolio'),
     'sample': ('Örnek veri', 'Example data'),
     'connected': ('Analiz motoru', 'Analysis engine'),
+    'ledger': ('Kayıtlı portföy', 'Recorded portfolio'),
+    'demo_workspace': ('Deneme portföyü', 'Learning portfolio'),
+    'welcome': ('Portföyüne nasıl başlamak istersin?', 'How would you like to start?'),
+    'explore_demo': ('Demoyu keşfet', 'Explore the demo'),
+    'explore_demo_help': ('İşlem kaydetmeyi ve paneli örnek fiyatlarla dene.', 'Try the dashboard and record transactions using example prices.'),
+    'create_portfolio': ('Kendi portföyümü oluştur', 'Create my portfolio'),
+    'create_portfolio_help': ('Portföyüne ad ver, nakit ekle ve ilk alışını kaydet.', 'Name your portfolio, add cash and record your first purchase.'),
+    'add_cash': ('Nakit ekle', 'Add cash'),
+    'first_buy': ('İlk alışını kaydet', 'Record your first purchase'),
+    'first_buy_help': ('Nakit kaydın hazır. Alışını ekleyince varlığın bu panelde görünecek.', 'Your cash is recorded. Your holding will appear here after you save your purchase.'),
+    'open_example': ('Hazır analiz örneğini aç', 'Open a prepared analysis example'),
+    'return_workspace': ('Kendi portföyüne dön', 'Return to your portfolio'),
+    'positions': ('Portföydeki varlıklar', 'Portfolio holdings'),
+    'view_positions': ('Varlıklarımı aç', 'Open my holdings'),
+    'manage_data': ('Veri ve ayarlara git', 'Go to data and settings'),
+    'missing_data_help': ('Fiyat ve kur geçmişini Veri ve ayarlar bölümünden kontrol et. Ortak piyasa verisini yerel yönetici içe aktarabilir.', 'Check price and FX history in Data & settings. A local administrator can import shared market data.'),
+    'archive_analysis_unavailable': ('Arşiv analizi şu anda kullanılamıyor.', 'The archive analysis is currently unavailable.'),
+    'ledger_correlation': ('Korelasyon grafiği, arşiv fiyatlarıyla bağlanan portföylerde kullanılabilir.', 'The correlation chart uses portfolios connected to archive prices.'),
     'preferences': ('Panel ayarları', 'Dashboard settings'),
     'overview': ('Portföy özeti', 'Portfolio summary'),
     'portfolio_details': ('Değer ve birikim takibi', 'Value and savings tracker'),
@@ -16,6 +34,15 @@ TEXT = {
     'all_comments': ('Tüm yorumları gör', 'See all insights'),
     'analysis_sections': ('Portföy analizi', 'Portfolio analysis'),
     'planning_sections': ('Birikim ve planlama', 'Savings and planning'),
+    'expert_tools': ('Uzman araçları', 'Expert tools'),
+    'correlation': ('Varlıklar birlikte nasıl hareket ediyor?', 'How do your holdings move together?'),
+    'correlation_hint': ('Portföy varlıklarının geçmiş fiyat ilişkisi', 'Historical price relationships between holdings'),
+    'correlation_sample': ('Bu örnek portföy dosyası fiyat serisi içermiyor. Korelasyon, analiz motoruna bağlı portföylerde hesaplanır.', 'This example portfolio file contains no price series. Correlation is calculated for portfolios connected to the analysis engine.'),
+    'correlation_missing': ('Korelasyon için en az iki varlığın ortak tarihlerde hesaplanmış ve değişkenlik gösteren en az 30 getirisi gerekiyor.', 'Correlation requires at least two holdings with 30 overlapping, varying returns.'),
+    'correlation_note': ('+1, getirilerin birlikte hareket ettiğini gösterir. −1 ters yönü, 0 ise zayıf bir doğrusal ilişkiyi gösterir.', '+1 means returns tend to move together. −1 means they tend to move in opposite directions. 0 means a weak linear relationship.'),
+    'correlation_period': ('Ortak tarihlerdeki TRY getirileri', 'TRY returns on shared dates'),
+    'lab': ('Model Laboratuvarı', 'Model Lab'),
+    'lab_hint': ('Fiyat tahminleri ve geçmiş verideki model testleri', 'Price forecasts and model tests on historical data'),
     'robustness_hint': ('Kriz senaryoları ve risk puanları', 'Crisis scenarios and risk scores'),
     'comments_hint': ('Portföyündeki güçlü yönler ve riskler', 'Strengths and risks in your portfolio'),
     'news_hint': ('Fonlarını ilgilendiren haberlerin etkisi', 'News sentiment for the funds you hold'),
@@ -457,6 +484,23 @@ def dashboard_context(payload, lang, currency, *, profile, level, reference=None
         'comments_data': {**copy_blocks(comment_section, lang), 'items': comment_items},
         'highlights': highlights,
         'funds': [fund_context(fund, lang, labels) for fund in payload.get('fund_cards') or []],
+    }
+
+
+def correlation_context(result):
+    matrix, observations, start, end = result
+    values = matrix.to_numpy().round(2).tolist()
+    symbols = matrix.columns.tolist()
+    figure = go.Figure(go.Heatmap(
+        z=values, x=symbols, y=symbols, zmin=-1, zmax=1,
+        colorscale=[[0, '#ab574a'], [.5, '#fafbf9'], [1, '#187a60']],
+        texttemplate='%{z:.2f}', hovertemplate='%{x} · %{y}<br>%{z:.2f}<extra></extra>',
+    ))
+    figure.update_yaxes(autorange='reversed', scaleanchor='x')
+    figure.update_xaxes(side='top')
+    return {
+        'chart': chart(figure, min(500, max(260, len(symbols) * 46 + 100))),
+        'observations': observations, 'start': start, 'end': end,
     }
 
 

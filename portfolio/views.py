@@ -11,6 +11,7 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils.translation import gettext as _
 from django.utils.translation import ngettext
 from django.views.decorators.http import require_POST
@@ -18,12 +19,22 @@ from django.views.decorators.http import require_POST
 from .charts import allocation_chart, chart, line_chart
 from .context import workspace
 from .forms import NoteForm, PortfolioForm, RangeForm, RegisterForm, TransactionForm
-from .models import Asset, ModelRun, NewsItem, Note, Portfolio, Price, SyncLog, Transaction
-from .services.analytics import correlation_matrix, risk_metrics, stress_tests
+from .models import (
+    CURRENCIES,
+    Asset,
+    ModelRun,
+    NewsItem,
+    Note,
+    Portfolio,
+    Price,
+    SyncLog,
+    Transaction,
+)
+from .services.analytics import risk_metrics
 from .services.demo import create_demo_portfolio
 from .services.ledger import delete_transaction, save_transaction
 from .services.providers import ProviderError, import_market, read_market_csv
-from .services.valuation import MarketBook, MissingData, benchmark_history, history, snapshot
+from .services.valuation import MissingData, benchmark_history, history, portfolio_book, snapshot
 
 
 def active(request):
@@ -65,7 +76,7 @@ def valuation_context(request, with_history=True):
         ctx['data_error'] = _('Correct the date/currency filters below.')
         return ctx
     try:
-        book = MarketBook(portfolio.dataset)
+        book = portfolio_book(portfolio)
         snap = snapshot(portfolio, currency, end, book)
         ctx.update(snap=snap, book=book)
         if with_history:
@@ -138,17 +149,20 @@ def transaction_edit(request, pk=None):
     p = instance.portfolio if instance else active(request)
     if not p:
         return redirect('dashboard')
-    form = TransactionForm(request.POST or None, instance=instance, portfolio=p)
+    guided = instance is None and request.GET.get('onboarding') == '1'
+    kind = request.GET.get('kind')
+    initial = {'kind': kind} if instance is None and kind in ('deposit', 'buy') else None
+    form = TransactionForm(request.POST or None, initial=initial, instance=instance, portfolio=p)
     if request.method == 'POST' and form.is_valid():
         row = form.save(commit=False)
         row.portfolio = p
         try:
-            row.fx_to_try = MarketBook(p.dataset).rate(row.currency, row.date)
+            row.fx_to_try = portfolio_book(p).rate(row.currency, row.date)
             save_transaction(row)
             messages.success(
                 request, _('Transaction saved. Portfolio balances have been recalculated.')
             )
-            return redirect('transactions')
+            return redirect('ai_dashboard' if guided else 'transactions')
         except (ValidationError, MissingData) as exc:
             form.add_error(
                 None, '; '.join(exc.messages) if isinstance(exc, ValidationError) else str(exc)
@@ -161,7 +175,8 @@ def transaction_edit(request, pk=None):
             'title': _('Edit transaction') if pk else _('Record a transaction'),
             'subtitle': _('Record cash deposits before entering fund or metal transactions.'),
             'page': 'transactions',
-            'cancel_url': 'transactions',
+            'cancel_url': 'ai_dashboard' if guided else 'transactions',
+            'no_priced_assets': not form.fields['asset'].queryset.exists(),
             'asset_options': [
                 {'id': asset.pk, 'kind': asset.kind}
                 for asset in form.fields['asset'].queryset
@@ -188,7 +203,9 @@ def compare(request):
     ctx['page'] = 'compare'
     benchmarks = Asset.objects.filter(kind='benchmark')
     ctx['benchmarks'] = benchmarks
-    selected = request.GET.getlist('benchmark') or ['SP500', 'NASDAQ100', 'BTC']
+    selected = request.GET.getlist('benchmark')
+    if not selected and 'benchmark_choices' not in request.GET:
+        selected = ['SP500', 'NASDAQ100', 'BTC']
     ctx['selected'] = selected
     if 'history' in ctx and not ctx['history'].empty:
         frame, f = ctx['history'], go.Figure()
@@ -216,29 +233,10 @@ def compare(request):
 
 
 @login_required
-def analysis(request):
-    ctx = valuation_context(request)
-    ctx['page'] = 'analysis'
-    if 'snap' in ctx:
-        ctx['scenarios'] = stress_tests(ctx['snap'], ctx['book']) if ctx['snap']['total'] else []
-        try:
-            corr = correlation_matrix(ctx['snap'], ctx['book'])
-            if not corr.empty:
-                ctx['correlation_chart'] = chart(
-                    go.Figure(
-                        go.Heatmap(
-                            z=corr.values.tolist(),
-                            x=list(corr.columns),
-                            y=list(corr.index),
-                            zmin=-1,
-                            zmax=1,
-                            colorscale=[[0, '#d89587'], [0.5, '#fafbf9'], [1, '#147d64']],
-                        )
-                    ),
-                    320,
-                )
-        except MissingData:
-            ctx['correlation_error'] = _('Correlation needs aligned historical exchange rates.')
+def model_lab(request):
+    ctx = valuation_context(request, with_history=False)
+    ctx['page'] = 'model_lab'
+    ctx['currencies'] = CURRENCIES
     risk_level = request.GET.get('risk', 'balanced')
     if risk_level not in ('cautious', 'balanced', 'growth'):
         risk_level = 'balanced'
@@ -258,7 +256,9 @@ def analysis(request):
         ctx['budget_error'] = _('Enter a finite budget between 0 and 1 trillion.')
     ctx['budget'] = budget
     candidates, seen = [], set()
-    for run in ModelRun.objects.filter(dataset=ctx['portfolio'].dataset).select_related('asset'):
+    runs = list(ModelRun.objects.filter(dataset=ctx['portfolio'].dataset).select_related('asset'))
+    ctx['has_model_runs'] = bool(runs)
+    for run in runs:
         if run.asset_id in seen:
             continue
         seen.add(run.asset_id)
@@ -296,7 +296,7 @@ def analysis(request):
             )
         ctx['backtest_chart'] = chart(f)
         ctx['featured_model'] = run
-    return render(request, 'portfolio/analysis.html', ctx)
+    return render(request, 'portfolio/model_lab.html', ctx)
 
 
 @login_required
@@ -423,7 +423,7 @@ def demo_load(request):
         request,
         _('Learning portfolio loaded. All market data and headlines in this workspace are synthetic.'),
     )
-    return redirect('dashboard')
+    return redirect('ai_dashboard' if request.POST.get('from_dashboard') == '1' else 'dashboard')
 
 
 @login_required
@@ -433,20 +433,31 @@ def portfolio_switch(request):
     request.session['portfolio_id'] = p.id
     page = request.POST.get('return_page')
     if page in {
-        'ai_dashboard', 'holdings', 'transactions', 'compare', 'analysis', 'news', 'notes', 'settings',
+        'ai_dashboard', 'holdings', 'transactions', 'compare', 'analysis', 'model_lab', 'news', 'notes', 'settings',
     }:
         return redirect(page)
     return redirect('ai_dashboard' if request.POST.get('from_ai_dashboard') == '1' else 'dashboard')
 
 
 @login_required
+@transaction.atomic
 def portfolio_create(request):
-    form = PortfolioForm(request.POST or None)
+    guided = request.GET.get('onboarding') == '1'
+    placeholder = None
+    if guided:
+        portfolios = request.user.portfolio_set.select_for_update()
+        if portfolios.count() == 1:
+            candidate = portfolios.first()
+            if candidate.name == 'My portfolio' and not candidate.transactions.exists() and not candidate.note_set.exists():
+                placeholder = candidate
+    form = PortfolioForm(request.POST or None, instance=placeholder)
     if request.method == 'POST' and form.is_valid():
         p = form.save(commit=False)
         p.user, p.dataset = request.user, 'live'
         p.save()
         request.session['portfolio_id'] = p.id
+        if guided:
+            return redirect(f"{reverse('transaction_new')}?kind=deposit&onboarding=1")
         return redirect('dashboard')
     return render(
         request,

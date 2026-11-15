@@ -1,5 +1,6 @@
 from django.contrib.auth import views as auth_views
 from django.urls import path
+from django.views.generic import RedirectView
 
 from . import views
 
@@ -14,7 +15,8 @@ urlpatterns = [
     path('transactions/<int:pk>/edit/', views.transaction_edit, name='transaction_edit'),
     path('transactions/<int:pk>/delete/', views.transaction_delete, name='transaction_delete'),
     path('compare/', views.compare, name='compare'),
-    path('analysis/', views.analysis, name='analysis'),
+    path('dashboard/model-lab/', views.model_lab, name='model_lab'),
+    path('analysis/', RedirectView.as_view(pattern_name='model_lab', query_string=True), name='analysis'),
     path('news/', views.news, name='news'),
     path('notes/', views.notes, name='notes'),
     path('notes/new/', views.note_edit, name='note_new'),

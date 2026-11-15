@@ -11,11 +11,11 @@
       <dt>{{ t.cash }}</dt>
       <dd>{% if p.cash is not None %}{{ p.cash|floatformat:'2g' }} <span>{{ p.cash_currency }}</span>{% else %}—{% endif %}</dd>
     </div>
-    <div>
+    {% if full_analysis %}<div>
       <dt><a href="#dashboard-risk">{{ t.robustness }} <span aria-hidden="true">↗</span></a></dt>
       <dd>{% if robustness_data.score is not None %}{{ robustness_data.score }} <span>/ 100</span>{% else %}—{% endif %}</dd>
       <dd class="dashboard-score-source">{{ robustness_source }}</dd>
-    </div>
+    </div>{% endif %}
   </dl>
 </div>
 <div class="panel dashboard-allocation">

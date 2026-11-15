@@ -6,17 +6,19 @@ import sys
 from datetime import date
 from pathlib import Path
 
+import pandas as pd
 from django.conf import settings
 from django.core.cache import cache
 from django.utils.crypto import salted_hmac
 
+from portfolio.services.archive import archive_close, archive_code
 from portfolio.services.ledger import replay
+from portfolio.services.valuation import MissingData, portfolio_book, snapshot
 
 from .models import DashboardPreferences
 
 logger = logging.getLogger(__name__)
 MOCK_DIR = Path(__file__).resolve().parent / 'mock'
-METAL_SYMBOLS = {'XAU': 'GOLD', 'XAG': 'SILVER', 'XPT': 'PLATINUM'}
 DEFAULT_FIXTURE = 'persona_1' if (MOCK_DIR / 'persona_1.json').is_file() else 'example'
 
 
@@ -37,8 +39,30 @@ def mock_profile_reference(profile):
         return json.load(source)[profile]
 
 
-def load_dashboard(user, lang, *, currency=None, profile=None, portfolio=None, fixture=DEFAULT_FIXTURE):
-    if settings.USE_MOCK_DASHBOARD:
+def archive_correlation(payload):
+    symbols = list(dict.fromkeys(card.get('symbol') for card in payload.get('fund_cards') or []))
+    if len(symbols) < 2 or any(not isinstance(symbol, str) or not symbol.isascii() or not symbol.isalnum()
+                               for symbol in symbols):
+        return None
+    prices = {}
+    try:
+        as_of = pd.Timestamp((payload.get('portfolio') or {}).get('usd_rate_date') or date.today())
+        for symbol in symbols:
+            prices[symbol] = archive_close(symbol)
+    except (OSError, ImportError, ValueError, TypeError):
+        logger.info('Portfolio correlation price series unavailable')
+        return None
+
+    # Align archived TRY closes before computing returns over the same date intervals.
+    aligned = pd.DataFrame(prices).sort_index().loc[:as_of].dropna().tail(253)
+    returns = aligned.pct_change(fill_method=None).dropna()
+    if len(returns) < 30 or (returns.nunique() < 2).any():
+        return None
+    return returns.corr(), len(returns), aligned.index[0].date(), aligned.index[-1].date()
+
+
+def load_dashboard(user, lang, *, currency=None, profile=None, portfolio=None, fixture=None, snap=None):
+    if fixture:
         filename = dict(mock_choices()).get(fixture)
         if filename is None:
             raise DashboardUnavailable('Unknown example file.')
@@ -64,18 +88,21 @@ def load_dashboard(user, lang, *, currency=None, profile=None, portfolio=None, f
     if not portfolio or portfolio.dataset == 'demo':
         raise DashboardUnavailable('A market portfolio is required.')
     rows = list(portfolio.transactions.select_related('asset').filter(date__lte=date.today()))
-    state = replay(rows)
+    state = snap['state'] if snap else replay(rows)
     assets = {row.asset_id: row.asset for row in rows if row.asset_id}
-    holdings = [
-        {'symbol': METAL_SYMBOLS.get(assets[aid].symbol, assets[aid].symbol),
-         'shares': float(position.quantity)}
-        for aid, position in state.positions.items() if position.quantity > 0
-    ]
+    market_prices = {holding['asset'].pk: float(holding['price']) for holding in snap['holdings']} if snap else {}
+    holdings = []
+    for aid, position in state.positions.items():
+        if position.quantity > 0:
+            holding = {'symbol': archive_code(assets[aid].symbol), 'shares': float(position.quantity)}
+            if aid in market_prices:
+                holding['price'] = market_prices[aid]
+            holdings.append(holding)
     if not holdings:
         raise DashboardUnavailable('At least one open fund or metal position is required.')
     contributions = []
     for row in rows:
-        symbol = METAL_SYMBOLS.get(row.asset.symbol, row.asset.symbol) if row.asset else 'CASH'
+        symbol = archive_code(row.asset.symbol) if row.asset else 'CASH'
         item = {
             'date': row.date.isoformat(),
             'symbol': symbol,
@@ -90,6 +117,37 @@ def load_dashboard(user, lang, *, currency=None, profile=None, portfolio=None, f
         'monthly_contribution': float(preferences.monthly_contribution) if preferences else 0.0,
         'profile': profile, 'base_currency': currency, 'lang': lang,
     })
+
+
+def workspace_payload(portfolio, currency, profile, lang):
+    book = portfolio_book(portfolio)
+    snap = snapshot(portfolio, currency, book=book)
+    total_try = snap['total'] * book.rate(currency, snap['asof'])
+    totals = {}
+    for code in ('TRY', 'USD', 'EUR', 'GBP'):
+        try:
+            totals[f'total_value_{code.lower()}'] = float(total_try / book.rate(code, snap['asof']))
+        except MissingData:
+            totals[f'total_value_{code.lower()}'] = None
+    allocation = {holding['asset'].symbol: holding['weight'] for holding in snap['holdings']}
+    if snap['cash'] and snap['total']:
+        allocation['Cash'] = float(snap['cash'] / snap['total'] * 100)
+    portfolio_data = {
+        **totals, 'base_currency': currency, 'cash_currency': 'TRY',
+        'cash_balance': float(snap['state'].cash), 'allocation_by_subcategory': allocation,
+    }
+    engine_payload = None
+    if portfolio.archive_prices and portfolio.dataset == 'live' and snap['holdings']:
+        try:
+            engine_payload = load_dashboard(
+                portfolio.user, lang, currency=currency, profile=profile, portfolio=portfolio, snap=snap,
+            )
+        except DashboardUnavailable:
+            logger.info('Portfolio analysis engine unavailable')
+    payload = dict(engine_payload or {})
+    payload['portfolio'] = {**(payload.get('portfolio') or {}), **portfolio_data}
+    payload['source'] = 'archive' if portfolio.archive_prices else 'ledger'
+    return payload, snap, bool(engine_payload)
 
 
 def call_bridge(inputs):

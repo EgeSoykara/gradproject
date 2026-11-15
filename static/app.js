@@ -1,8 +1,16 @@
 document.addEventListener('DOMContentLoaded', () => {
   const menu = document.querySelector('.menu-button');
+  const sidebar = document.querySelector('#sidebar');
   menu?.addEventListener('click', () => {
-    const open = document.querySelector('#sidebar').classList.toggle('open');
+    const open = sidebar.classList.toggle('open');
     menu.setAttribute('aria-expanded', String(open));
+    if (open) sidebar.querySelector('a').focus();
+  });
+  sidebar?.addEventListener('keydown', event => {
+    if (event.key !== 'Escape' || !sidebar.classList.contains('open')) return;
+    sidebar.classList.remove('open');
+    menu.setAttribute('aria-expanded', 'false');
+    menu.focus();
   });
   const workspace = document.querySelector('.workspace-switch select');
   if (workspace?.form && typeof workspace.form.requestSubmit === 'function') {
@@ -56,6 +64,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const byId = new Map(options.map(option => [String(option.id), option]));
     const search = document.querySelector('#asset-search');
     const quantityLabel = document.querySelector('label[for="id_quantity"]');
+    const priceLabel = document.querySelector('label[for="id_price"]');
+    const missingPrices = document.querySelector('#missing-trade-prices');
     const updateQuantityLabel = () => {
       const metal = byId.get(asset.value)?.kind === 'metal';
       const cash = ['deposit', 'withdraw'].includes(kind.value);
@@ -79,6 +89,8 @@ document.addEventListener('DOMContentLoaded', () => {
     asset.addEventListener('change', updateQuantityLabel);
     const toggle = () => {
       const cash = ['deposit', 'withdraw'].includes(kind.value);
+      priceLabel.textContent = cash ? document.body.dataset.cashLabel : document.body.dataset.priceLabel;
+      if (missingPrices) missingPrices.hidden = !['buy', 'sell'].includes(kind.value);
       ['asset', 'quantity', 'fee'].forEach(name => {
         const input = document.querySelector(`#id_${name}`);
         input.closest('p').hidden = cash;

@@ -4,15 +4,16 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}{% translate 'PortfolioAI · Investment workspace' %}{% endblock %}</title>
-  <link rel="stylesheet" href="{% static 'app.css' %}?v=score-source">
+  <link rel="stylesheet" href="{% static 'app.css' %}?v=portfolio-start">
   <link rel="stylesheet" href="{% static 'language-switch.css' %}">
   {% block styles %}{% endblock %}
   <script src="{% static 'vendor/plotly.min.js' %}" defer></script>
   {% if site_language == 'tr' %}<script src="{% static 'vendor/plotly-locale-tr.js' %}" defer></script>{% endif %}
-  <script src="{% static 'app.js' %}?v=dashboard-details" defer></script>
+  <script src="{% static 'app.js' %}?v=portfolio-start" defer></script>
 </head>
 <body data-chart-error="{% translate 'The chart could not be loaded. Refresh the page to try again.' %}"
   data-grams-label="{% translate 'Grams:' %}" data-units-label="{% translate 'Units:' %}"
+  data-cash-label="{% translate 'Cash amount:' %}" data-price-label="{% translate 'Unit price:' %}"
   data-no-assets="{% translate 'No matching assets.' %}">
 <svg class="svg-defs" xmlns="http://www.w3.org/2000/svg"><defs>
 <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
@@ -27,12 +28,11 @@
 {% if user.is_authenticated %}
 <aside class="sidebar" id="sidebar"><a class="brand" href="{% url 'dashboard' %}"><span class="brand-mark">P<span>↗</span></span>Portfolio<span class="brand-ai">AI</span></a><div class="brand-caption">{% translate 'A clearer view of your wealth' %}</div>
 <div class="nav-label">{% translate 'WORKSPACE' %}</div><nav aria-label="{% translate 'Main navigation' %}">
-<a href="{% url 'ai_dashboard' %}" class="{% if page == 'ai_dashboard' %}active{% endif %}"><svg><use href="#i-spark"/></svg>{% translate 'Portfolio dashboard' %}</a>
+<a href="{% url 'ai_dashboard' %}" class="{% if page == 'ai_dashboard' or page == 'model_lab' %}active{% endif %}"><svg><use href="#i-spark"/></svg>{% translate 'Portfolio dashboard' %}</a>
 <a href="{% url 'dashboard' %}" class="{% if page == 'dashboard' %}active{% endif %}"><svg><use href="#i-grid"/></svg>{% translate 'Overview' %}</a>
 <a href="{% url 'holdings' %}" class="{% if page == 'holdings' %}active{% endif %}"><svg><use href="#i-wallet"/></svg>{% translate 'My holdings' %}</a>
 <a href="{% url 'transactions' %}" class="{% if page == 'transactions' %}active{% endif %}"><svg><use href="#i-arrows"/></svg>{% translate 'Transactions' %}</a>
 <a href="{% url 'compare' %}" class="{% if page == 'compare' %}active{% endif %}"><svg><use href="#i-chart"/></svg>{% translate 'Benchmark' %}</a>
-<a href="{% url 'analysis' %}" class="{% if page == 'analysis' %}active{% endif %}"><svg><use href="#i-spark"/></svg>{% translate 'AI insights' %} <span class="tiny-badge">LAB</span></a>
 <div class="nav-label">{% translate 'RESEARCH & PLANNING' %}</div>
 <a href="{% url 'news' %}" class="{% if page == 'news' %}active{% endif %}"><svg><use href="#i-news"/></svg>{% translate 'Market brief' %}</a>
 <a href="{% url 'notes' %}" class="{% if page == 'notes' %}active{% endif %}"><svg><use href="#i-note"/></svg>{% translate 'My notes' %}</a>
@@ -41,9 +41,9 @@
 <div class="app-shell">
   <header class="topbar">
     <button class="menu-button" aria-label="{% translate 'Toggle navigation' %}" aria-controls="sidebar" aria-expanded="false">☰</button>
-    <div class="breadcrumb">{% translate 'Workspace' %} <span>/</span> {{ active_portfolio|workspace_name:site_language }}</div>
+    {% if active_portfolio and not mock %}<div class="breadcrumb">{% translate 'Workspace' %} <span>/</span> {{ active_portfolio|workspace_name:site_language }}</div>{% endif %}
     <div class="topbar-right">
-      <span class="pill {% if active_portfolio.dataset == 'demo' %}amber{% endif %}">
+      {% if active_portfolio and not mock %}<span class="pill {% if active_portfolio.dataset == 'demo' %}amber{% endif %}">
         ◉ {% if active_portfolio.dataset == 'demo' %}{% translate 'Demo data' %}{% else %}{% translate 'Market workspace' %}{% endif %}
       </span>
       <form method="post" action="{% url 'portfolio_switch' %}" class="workspace-switch">
@@ -55,7 +55,7 @@
           {% for p in workspaces %}<option value="{{ p.id }}" {% if p.id == active_portfolio.id %}selected{% endif %}>{{ p|workspace_name:site_language }}</option>{% endfor %}
         </select>
         <button type="submit" class="subtle-button">{% translate 'Switch' %}</button>
-      </form>
+      </form>{% endif %}
       {% include '_language_switch.html' %}
     </div>
   </header>

@@ -7,6 +7,7 @@ from django.utils.translation import gettext as _
 
 from portfolio.models import Asset, ExchangeRate, Price
 
+from .archive import archive_close
 from .ledger import Ledger, replay
 
 
@@ -77,9 +78,47 @@ class MarketBook:
         return price * self.rate(self.assets[asset_id].currency, day)
 
 
+class ArchiveMarketBook(MarketBook):
+    def __init__(self):
+        super().__init__('live')
+        self.archive_series = {}
+
+    def series(self, symbol):
+        if symbol not in self.archive_series:
+            try:
+                prices = archive_close(symbol)
+            except (OSError, ImportError, ValueError, TypeError):
+                self.archive_series[symbol] = ([], [])
+            else:
+                self.archive_series[symbol] = (
+                    [(day.date(), Decimal(str(price))) for day, price in prices.items()],
+                    prices.index.date.tolist(),
+                )
+        return self.archive_series[symbol]
+
+    def price(self, asset_id, day, strict=True):
+        asset = self.assets[asset_id]
+        if asset.kind == 'benchmark':
+            return super().price(asset_id, day, strict)
+        rows, days = self.series(asset.symbol) if asset.currency == 'TRY' else ([], [])
+        return self.lookup(rows, days, day, asset.symbol, strict)
+
+    def rate(self, currency, day, strict=True):
+        if currency == 'USD':
+            rows, days = self.series('USDTRY')
+            return self.lookup(rows, days, day, 'USD/TRY', strict)[0]
+        return super().rate(currency, day, strict)
+
+
+def portfolio_book(portfolio):
+    if portfolio.dataset == 'live' and portfolio.archive_prices:
+        return ArchiveMarketBook()
+    return MarketBook(portfolio.dataset)
+
+
 def snapshot(portfolio, currency='TRY', asof=None, book=None):
     asof = asof or date.today()
-    book = book or MarketBook(portfolio.dataset)
+    book = book or portfolio_book(portfolio)
     state = replay(portfolio.transactions.filter(date__lte=asof).select_related('asset'))
     fx = book.rate(currency, asof)
     holdings = []
@@ -123,7 +162,7 @@ def history(portfolio, currency='TRY', start=None, end=None, book=None):
     rows = list(portfolio.transactions.filter(date__lte=end).select_related('asset'))
     if not rows:
         return pd.DataFrame(columns=['value', 'flow', 'return', 'index'])
-    book = book or MarketBook(portfolio.dataset)
+    book = book or portfolio_book(portfolio)
     days = sorted(set(pd.bdate_range(rows[0].date, end).date) | {r.date for r in rows} | {end})
     state, cursor, previous, growth = Ledger(), 0, None, 1.0
     output = []

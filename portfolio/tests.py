@@ -198,7 +198,7 @@ class PortfolioTests(TestCase):
             'dashboard',
             'holdings',
             'transactions',
-            'analysis',
+            'model_lab',
             'notes',
             'news',
             'settings',
@@ -212,7 +212,7 @@ class PortfolioTests(TestCase):
             'dashboard',
             'holdings',
             'transactions',
-            'analysis',
+            'model_lab',
             'notes',
             'news',
             'settings',
@@ -225,13 +225,13 @@ class PortfolioTests(TestCase):
 
     def test_language_switch_persists_across_pages_and_sessions(self):
         self.client.force_login(self.user)
-        analysis_url = reverse('analysis')
+        analysis_url = reverse('model_lab')
         response = self.client.post(
             reverse('set_language'),
             {'language': 'tr', 'next': f'{analysis_url}?lang=en&currency=TRY'},
         )
         self.assertRedirects(response, f'{analysis_url}?currency=TRY')
-        self.assertContains(self.client.get(analysis_url), 'Yapay zekâ analizleri')
+        self.assertContains(self.client.get(analysis_url), 'Model Laboratuvarı')
         self.assertContains(self.client.get(reverse('transactions')), '<h1>İşlemler</h1>', html=True)
         self.assertContains(self.client.get(reverse('transaction_new')), 'İşlem kaydet')
         self.assertContains(self.client.get(reverse('ai_dashboard')), '<html lang="tr">')
@@ -244,6 +244,18 @@ class PortfolioTests(TestCase):
         )
         self.assertRedirects(response, reverse('notes'))
         self.assertContains(self.client.get(reverse('notes')), '<h1>My notes</h1>', html=True)
+
+    def test_analysis_bookmark_redirects_to_model_lab(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse('analysis'), {'currency': 'USD', 'budget': '200'})
+        self.assertRedirects(response, f"{reverse('model_lab')}?currency=USD&budget=200")
+        self.assertNotContains(self.client.get(reverse('dashboard')), f'href="{reverse("model_lab")}"')
+
+    def test_benchmark_form_can_clear_all_comparisons(self):
+        self.client.force_login(self.user)
+        path = reverse('compare')
+        self.assertEqual(self.client.get(path).context['selected'], ['SP500', 'NASDAQ100', 'BTC'])
+        self.assertEqual(self.client.get(path, {'benchmark_choices': '1'}).context['selected'], [])
 
     def test_language_switch_works_before_sign_in(self):
         response = self.client.post(
